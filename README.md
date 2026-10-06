@@ -70,10 +70,27 @@ Nothing you ask either model leaves the machine.
 
 **And a game** — WordFall, a RealityKit vocabulary game, fed from your own decks.
 
+## Install
+
+Download `Words-1.0.0.dmg` from
+[Releases](https://github.com/Ta2-me2/Words/releases/latest), open it, and drag
+Words to Applications.
+
+The first launch needs one extra step. The app is signed, but not with a paid
+Apple Developer certificate, so macOS will say it cannot verify the developer
+and refuse to open it:
+
+1. Open **System Settings ▸ Privacy & Security**.
+2. Scroll down to the line saying Words was blocked, and click **Open Anyway**.
+3. Confirm. macOS remembers the decision; every later launch is ordinary.
+
+If you would rather not take anyone's word for what you are running, build it
+yourself — it is four commands below, and nothing in it needs an account.
+
 ## Requirements
 
-- macOS 26 or later. The local companion needs macOS 27.
-- Xcode 27 (Swift 6.4), Apple silicon.
+- macOS 26 or later, Apple silicon. The local companion needs macOS 27.
+- To build: Xcode 27 (Swift 6.4).
 
 ## Building
 
@@ -102,6 +119,12 @@ xcodebuild -downloadComponent MetalToolchain
 
 The app is signed ad-hoc and is not sandboxed; no developer account is needed to
 build or run it.
+
+To build the disk image a release page carries:
+
+```bash
+Scripts/make-dmg.sh
+```
 
 ## Checks
 

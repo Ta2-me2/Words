@@ -10,5 +10,8 @@ xcuserdata/
 .xcbuild/
 .swiftpm/
 
+# Release artefacts. A built app belongs on a release page, not in the history.
+dist/
+
 # macOS
 .DS_Store
