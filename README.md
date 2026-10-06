@@ -36,7 +36,7 @@ Your daily learning at a glance. See the reviews and new words waiting for you, 
 - Ready for another round? **I want more** adds to today's allowance without changing your usual limits.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/5182f107-cb8c-4061-a8ba-e0e022b2a271" width="92%" alt="Words Home with daily reviews, a streak tracker, and an activity calendar" />
+  <img src="https://github.com/user-attachments/assets/9adeb5d8-67cf-42ba-a44b-a259344e18d0" width="92%" alt="Words Home with daily reviews, a streak tracker, and an activity calendar" />
 </p>
 
 ### Add Words
