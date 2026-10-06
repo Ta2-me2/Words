@@ -1,0 +1,304 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		WRDS00000000000000000019 /* WortfallKit in Frameworks */ = {isa = PBXBuildFile; productRef = WRDS00000000000000000017 /* WortfallKit */; };
+		WRDS0000000000000000001A /* WortfallCore in Frameworks */ = {isa = PBXBuildFile; productRef = WRDS00000000000000000018 /* WortfallCore */; };
+		WRDS0000000000000000001D /* WordsCompanion in Frameworks */ = {isa = PBXBuildFile; productRef = WRDS0000000000000000001C /* WordsCompanion */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		WRDS00000000000000000004 /* Words.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Words.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		WRDS00000000000000000005 /* Words */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (); path = Words; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		WRDS00000000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				WRDS00000000000000000019 /* WortfallKit in Frameworks */,
+				WRDS0000000000000000001A /* WortfallCore in Frameworks */,
+				WRDS0000000000000000001D /* WordsCompanion in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		WRDS00000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				WRDS00000000000000000005 /* Words */,
+				WRDS00000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		WRDS00000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				WRDS00000000000000000004 /* Words.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		WRDS00000000000000000006 /* Words */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = WRDS00000000000000000013 /* Build configuration list for PBXNativeTarget "Words" */;
+			buildPhases = (
+				WRDS00000000000000000007 /* Sources */,
+				WRDS00000000000000000008 /* Frameworks */,
+				WRDS00000000000000000009 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				WRDS00000000000000000005 /* Words */,
+			);
+			name = Words;
+			packageProductDependencies = (
+				WRDS00000000000000000017 /* WortfallKit */,
+				WRDS00000000000000000018 /* WortfallCore */,
+				WRDS0000000000000000001C /* WordsCompanion */,
+			);
+			productName = Words;
+			productReference = WRDS00000000000000000004 /* Words.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		WRDS00000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					WRDS00000000000000000006 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+				};
+			};
+			buildConfigurationList = WRDS00000000000000000010 /* Build configuration list for PBXProject "Words" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = WRDS00000000000000000002;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				WRDS00000000000000000016 /* XCLocalSwiftPackageReference "Packages/WordFallSDK" */,
+				WRDS0000000000000000001B /* XCLocalSwiftPackageReference "Packages/WordsCompanion" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = WRDS00000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				WRDS00000000000000000006 /* Words */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		WRDS00000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		WRDS00000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		WRDS00000000000000000011 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		WRDS00000000000000000012 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		WRDS00000000000000000014 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Words;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Words records a word in your own voice when you ask it to.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.words.app;
+				PRODUCT_NAME = Words;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		WRDS00000000000000000015 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Words;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Words records a word in your own voice when you ask it to.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.words.app;
+				PRODUCT_NAME = Words;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		WRDS00000000000000000010 /* Build configuration list for PBXProject "Words" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				WRDS00000000000000000011 /* Debug */,
+				WRDS00000000000000000012 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		WRDS00000000000000000013 /* Build configuration list for PBXNativeTarget "Words" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				WRDS00000000000000000014 /* Debug */,
+				WRDS00000000000000000015 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		WRDS00000000000000000016 /* XCLocalSwiftPackageReference "Packages/WordFallSDK" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/WordFallSDK;
+		};
+		WRDS0000000000000000001B /* XCLocalSwiftPackageReference "Packages/WordsCompanion" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/WordsCompanion;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		WRDS00000000000000000017 /* WortfallKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WortfallKit;
+		};
+		WRDS00000000000000000018 /* WortfallCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WortfallCore;
+		};
+		WRDS0000000000000000001C /* WordsCompanion */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WordsCompanion;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = WRDS00000000000000000001 /* Project object */;
+}

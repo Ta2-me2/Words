@@ -1,0 +1,12 @@
+[
+  {
+    "id": "host-folder-travel",
+    "name": "Travel",
+    "cards": [
+      {"id": "host-word-1", "word": "der Zug", "translation": "поезд"},
+      {"id": "host-word-2", "word": "das Hotel", "translation": "отель"},
+      {"id": "host-word-3", "word": "der Flughafen", "translation": "аэропорт"},
+      {"id": "host-word-4", "word": "die Reise", "translation": "путешествие"}
+    ]
+  }
+]
