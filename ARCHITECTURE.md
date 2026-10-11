@@ -183,7 +183,8 @@ Words/
   Scheduling/     When a card is next wanted
   Persistence/    The library on disk, and the store the interface talks to
   Anki/           Reading Anki packages, and guessing where their fields go
-  Features/       Home, Words (add + edit), Library (+ decks), Statistics, Study, Games
+  Exchange/       Zip, and the package Words writes for another copy of itself
+  Features/       Home, Words (add + edit), Library (+ decks), Statistics, Study, Games, Export
 Tests/            Checks for everything above that has no window in it
 Packages/
   WordFallSDK/    The game, as its developer ships it: a local Swift package
@@ -191,9 +192,10 @@ Packages/
 ```
 
 The dependency direction is one way: `Features` and `App` know about
-`Persistence`, `Persistence` knows about `Anki`, `Model` and `Scheduling`, and
-`Model` and `Scheduling` know about nothing but Foundation. `Anki` adds only
-what macOS ships — SQLite and the Compression framework. That is what lets the whole
+`Persistence`, `Persistence` knows about `Anki`, `Exchange`, `Model` and
+`Scheduling`, and `Model` and `Scheduling` know about nothing but Foundation.
+`Anki` and `Exchange` add only what macOS ships — SQLite and the Compression
+framework. That is what lets the whole
 learning loop be checked without launching the application.
 
 ### Model
@@ -250,6 +252,45 @@ the prompt describes, so the two cannot drift apart unnoticed. A learner's edite
 version is kept on the language; the standard one is never stored, so a learner
 who never changed it gets the standard one as it improves. The code fences an
 AI puts round a list are skipped by the import.
+
+### Handing a deck to somebody
+
+A library that can only be filled is half a library. `Exchange` is the other
+half: `.wordspack`, a plain zip holding `words.json` and a `Media/` folder, with
+a `README.txt` saying what it is for whoever opens it without the app. The JSON
+is the library's own types — languages, decks, words, reviews — encoded as the
+library encodes them, so nothing is lost in translation and nothing has to be
+kept in step by hand. `format` is the promise: a package from a later version
+says so and is refused, rather than read wrongly.
+
+`ZipArchive` reads; `ZipWriter` writes, entry by entry so an archive is never
+held in memory whole. Text is deflated and media is not: a JPEG deflates to
+slightly more than it started as.
+
+- **What goes.** `ExportPlan` turns a set of ticks into a package. A deck keeps
+  the deck above it only when that one is coming too, so exporting "A1" hands
+  over "A1" rather than an empty "Germany" with something hidden inside it.
+  Each kind of file can be left behind on its own — the words stay and the
+  links come off them — and so can the schedule, which is off by default:
+  a deck that arrives already half-learned by somebody else is a deck with a
+  wrong schedule. The voice identifier never travels; it is a fact about a Mac.
+- **What arrives.** `PackageImport` works out the whole of an import before
+  anything is written, and gives everything new identifiers. A package is
+  somebody else's library, and keeping its identifiers would let an import
+  overwrite a word already here — including its schedule, the one thing in the
+  app that cannot be got back. New identifiers make an import a thing that only
+  ever adds; words are matched by how they are spelled, so opening the same
+  package twice adds nothing the second time, and a deck of a name already in
+  that place is that deck rather than a second one.
+- **Files before words.** The store writes the media first and the words after,
+  so nothing ever points at a file that is not there; a file that cannot be
+  written is dropped from the word that wanted it. A file missing from the
+  library at export time is reported and left out rather than failing the
+  export — a lost photograph is not a reason to lose a thousand words.
+- **Where it is.** Export is its own section, showing every language at once
+  rather than the one being studied: the deck somebody wants to hand over is
+  often not the one they are in. Opening a package is a fourth side of Add
+  Words, because that is where adding words already lives.
 
 `Speaker` decides how a word is said — its own file or the language's voice, the
 article included, and the example sentence after it if the language is set to
@@ -649,7 +690,9 @@ nothing may get past and the file that tries, and which characters are an
 emoji — flags and the profiles written before they
 existed, every line of the import format and the messes it arrives in, a
 transcription found by its brackets wherever it sits and a note that stays last
-whatever was left empty before it, what the card
+whatever was left empty before it, what a tick in the export tree comes to and a
+package written, read back byte for byte and opened into a library that already
+has half of it, what the card
 assistant is told and the library words a question names, the order of the
 vocabulary table, an Anki article kept in a field of its own and recordings
 told apart by their names, the

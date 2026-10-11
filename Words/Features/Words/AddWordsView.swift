@@ -43,7 +43,8 @@ struct AddWordsView: View {
         AddModeSwitch(
             oneWord: single,
             list: ImportWordsView(profile: profile, deckID: $deckID),
-            anki: AnkiImportView(profile: profile)
+            anki: AnkiImportView(profile: profile),
+            package: ImportPackageView()
         )
         .navigationTitle(AppSection.add.title)
         .navigationSubtitle(profile.languagePair)
@@ -259,10 +260,11 @@ struct AddWordsView: View {
 /// settle, and taking them showed as a lens that froze and then jumped. A kept
 /// side also keeps what was typed in it, which is what someone who looks at the
 /// other side for a moment expects to find when they come back.
-private struct AddModeSwitch<OneWord: View, WordList: View, Anki: View>: View {
+private struct AddModeSwitch<OneWord: View, WordList: View, Anki: View, Package: View>: View {
     let oneWord: OneWord
     let list: WordList
     let anki: Anki
+    let package: Package
 
     @Environment(Router.self) private var router
 
@@ -275,6 +277,7 @@ private struct AddModeSwitch<OneWord: View, WordList: View, Anki: View>: View {
             side(.single) { oneWord }
             side(.list) { list }
             side(.anki) { anki }
+            side(.package) { package }
         }
         .task {
             try? await Task.sleep(for: .milliseconds(500))
@@ -323,7 +326,7 @@ private struct AddModePicker: View {
         }
         .pickerStyle(.segmented)
         .labelsHidden()
-        .frame(width: 300)
+        .frame(width: 380)
         // The menu bar can change the mode too; the control follows it.
         .onChange(of: router.addMode) { chosen = nil }
     }

@@ -48,6 +48,17 @@ and a tutor beside the card that can be asked anything in any language.
   prompt to hand an AI so the list it writes pastes straight in.
 - **One word at a time**, with everything optional except the word and what it
   means.
+- **From Words** — a `.wordspack` somebody exported, with its decks, its
+  subdecks and its files intact.
+
+**Getting words out**
+
+Export is its own section. Tick whole languages, a deck, or one subdeck; leave
+behind the photographs, the recordings, the drawings or your own schedule; and
+write it all into one `.wordspack` — a plain zip with readable JSON and a media
+folder, which another copy of Words opens with the decks exactly as they were.
+Importing only ever adds: a word already in the language is left as it is, and
+nothing you have studied is overwritten.
 
 **The companion**
 
@@ -132,7 +143,7 @@ Scripts/make-dmg.sh
 Tests/run.sh
 ```
 
-927 checks over the scheduler, the queue, the day's allowance, decks and
+1001 checks over the scheduler, the queue, the day's allowance, decks and
 subdecks, the import formats, the Anki reader, the streak, the store and what the
 companion is told — compiled as a command-line binary, so they run in a couple of
 seconds and need no window.
@@ -164,7 +175,8 @@ Words/
   Scheduling/     when a card is next wanted
   Persistence/    the library on disk, and the store the interface talks to
   Anki/           reading Anki packages, and guessing where their fields go
-  Features/       Home, Words, Library, Statistics, Study, Games, Settings
+  Exchange/       zip, and the package Words writes for another copy of itself
+  Features/       Home, Words, Library, Statistics, Study, Games, Export, Settings
 Tests/            checks for everything above that has no window in it
 Packages/
   WordFallSDK/    the game

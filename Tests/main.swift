@@ -60,6 +60,7 @@ await checkAnkiDecks()
 checkVoiceCatalogue()
 await checkPersistence()
 await checkStore()
+checkExchange()
 
 print("")
 if failures == 0 {

@@ -78,6 +78,9 @@ struct RootView: View {
         case .statistics:
             StatisticsView(profile: profile)
 
+        case .export:
+            ExportView()
+
         case .games:
             GamesView(profile: profile)
                 // A game and its progress belong to one language; switching

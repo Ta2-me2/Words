@@ -311,6 +311,72 @@ final class LibraryStore {
         discard(files)
     }
 
+    // MARK: - Packages
+
+    /// Writes a selection out as a `.wordspack`.
+    ///
+    /// Off the main thread: a library with four hundred photographs in it is
+    /// half a gigabyte to read and write, and a window that stops answering
+    /// while it happens is a window that looks broken.
+    ///
+    /// Returns the files that could not be read, which are left out rather than
+    /// failing the whole export — a photograph gone missing from the folder is
+    /// not a reason to lose a thousand words.
+    func writePackage(_ plan: ExportPlan, to url: URL, appVersion: String) async throws -> [String] {
+        let persistence = self.persistence
+        return try await Task.detached(priority: .userInitiated) {
+            try WordsPackage.write(
+                plan, to: url, appVersion: appVersion,
+                mediaURL: { persistence.mediaURL(for: $0) }
+            )
+        }.value
+    }
+
+    /// Puts everything an import worked out into the library.
+    ///
+    /// Files first, and words after them: a word that pointed at a photograph
+    /// still being written would be a word with a hole in it if the app were
+    /// closed in between. A file that cannot be written is dropped from the
+    /// word that wanted it, so nothing ever points at something that is not
+    /// there.
+    @discardableResult
+    func importPackage(_ package: WordsPackage, applying plan: PackageImport.Plan) async -> Int {
+        let persistence = self.persistence
+        let media = plan.media
+
+        let missing: Set<String> = await Task.detached(priority: .userInitiated) {
+            var missing: Set<String> = []
+            for (inside, here) in media {
+                guard let data = package.media(inside) else {
+                    missing.insert(here)
+                    continue
+                }
+                let name = (here as NSString).lastPathComponent
+                if (try? await persistence.writeMedia(data, as: name)) == nil { missing.insert(here) }
+            }
+            return missing
+        }.value
+
+        update { library in
+            for profile in plan.profiles { library.upsert(profile) }
+            for deck in plan.decks { library.upsert(deck) }
+            for entry in plan.entries { library.upsert(Self.withoutMissingFiles(entry, missing: missing)) }
+            library.reviews.append(contentsOf: plan.reviews)
+        }
+        return plan.entries.count
+    }
+
+    /// A word with the links to files that never arrived taken off it.
+    private static func withoutMissingFiles(_ entry: Entry, missing: Set<String>) -> Entry {
+        guard !missing.isEmpty else { return entry }
+        var copy = entry
+        if let file = copy.audio?.file, missing.contains(file) { copy.audio = nil }
+        if let file = copy.exampleAudio?.file, missing.contains(file) { copy.exampleAudio = nil }
+        if let file = copy.picture?.file, missing.contains(file) { copy.picture = nil }
+        if let file = copy.association?.file, missing.contains(file) { copy.association = nil }
+        return copy
+    }
+
     // MARK: - Files that belong to a word
 
     /// Where a word's recording is, for a player to open.

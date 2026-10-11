@@ -157,6 +157,8 @@ nonisolated enum AddMode: String, CaseIterable, Identifiable, Sendable {
     case single
     case list
     case anki
+    /// A package another copy of Words wrote.
+    case package
 
     var id: String { rawValue }
 
@@ -165,6 +167,7 @@ nonisolated enum AddMode: String, CaseIterable, Identifiable, Sendable {
         case .single: "One Word"
         case .list: "A List"
         case .anki: "From Anki"
+        case .package: "From Words"
         }
     }
 }

@@ -30,6 +30,7 @@ struct Sidebar: View {
                 library
                 row(.statistics)
                 row(.games)
+                row(.export)
             }
         }
         .listStyle(.sidebar)

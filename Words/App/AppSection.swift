@@ -23,6 +23,9 @@ nonisolated enum AppSection: String, CaseIterable, Identifiable, Sendable {
     /// nothing here touches a schedule.
     case games
 
+    /// Handing decks to somebody else, or keeping a copy of one's own.
+    case export
+
     var id: String { rawValue }
 
     var title: String {
@@ -32,6 +35,7 @@ nonisolated enum AppSection: String, CaseIterable, Identifiable, Sendable {
         case .library: "Library"
         case .statistics: "Statistics"
         case .games: "Games"
+        case .export: "Export"
         }
     }
 
@@ -42,6 +46,7 @@ nonisolated enum AppSection: String, CaseIterable, Identifiable, Sendable {
         case .library: "books.vertical"
         case .statistics: "chart.bar"
         case .games: "gamecontroller"
+        case .export: "square.and.arrow.up"
         }
     }
 }
