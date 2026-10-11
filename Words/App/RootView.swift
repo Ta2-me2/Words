@@ -22,7 +22,7 @@ struct RootView: View {
             // to open has no languages in it, and every game's progress would
             // look orphaned.
             if store.loadState == .ready {
-                WortfallHost.shared.pruneOrphans(keeping: Set(store.library.profiles.map(\.id)))
+                GameStorage.pruneOrphans(keeping: Set(store.library.profiles.map(\.id)))
             }
             clock.start()
             Speaker.warmUp()

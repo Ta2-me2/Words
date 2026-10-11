@@ -17,6 +17,8 @@ struct GamesView: View {
             switch playing {
             case .wordFall:
                 WortfallScreen(profile: profile) { self.playing = nil }
+            case .dictation:
+                DictationScreen(profile: profile) { self.playing = nil }
             }
         } else {
             shelf
@@ -60,9 +62,7 @@ private struct GameTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 14) {
-                Image(game.icon)
-                    .resizable()
-                    .interpolation(.high)
+                icon
                     .frame(width: 64, height: 64)
                     .accessibilityHidden(true)
 
@@ -88,10 +88,10 @@ private struct GameTile: View {
 
                 Button("Play", action: play)
                     .buttonStyle(.borderedProminent)
-                    .disabled(collections.isEmpty)
+                    .disabled(collections.isEmpty && game.needsWordsToOpen)
             }
 
-            if !tooSmall.isEmpty {
+            if !tooSmall.isEmpty, game.picksDecksOnTheShelf {
                 Text(tooSmallNote)
                     .font(.caption)
                     .foregroundStyle(Palette.tertiaryText)
@@ -106,13 +106,30 @@ private struct GameTile: View {
         }
     }
 
+    @ViewBuilder
+    private var icon: some View {
+        switch game.icon {
+        case .artwork(let name):
+            Image(name)
+                .resizable()
+                .interpolation(.high)
+        case .symbol(let name):
+            Image(systemName: name)
+                .font(.system(size: 28, weight: .regular))
+                .foregroundStyle(Palette.selection)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Palette.selection.opacity(0.12), in: .rect(cornerRadius: 14, style: .continuous))
+        }
+    }
+
     /// "42 words · 3 decks", or what is missing before it can be played.
     private var status: String {
         guard let everything = collections.first(where: { $0.deckID == nil }) else {
-            return "Needs at least \(GameVocabulary.minimumWords) words"
+            return "Needs at least \(game.minimumWords) \(game.minimumWords == 1 ? "word" : "words")"
         }
-        let decks = collections.count - 1
         let words = "\(everything.words.count) words"
+        guard game.picksDecksOnTheShelf else { return words }
+        let decks = collections.count - 1
         return decks == 0 ? words : "\(words) · \(decks) \(decks == 1 ? "deck" : "decks")"
     }
 

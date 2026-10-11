@@ -61,6 +61,7 @@ checkVoiceCatalogue()
 await checkPersistence()
 await checkStore()
 checkExchange()
+checkDictation()
 
 print("")
 if failures == 0 {

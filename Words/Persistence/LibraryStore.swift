@@ -295,6 +295,22 @@ final class LibraryStore {
         }
     }
 
+    /// Puts an example sentence on a word, leaving everything else alone.
+    ///
+    /// Its own method rather than a trip through `editEntry`, because the one
+    /// thing writing examples in bulk must not do is touch the rest of a word
+    /// a learner spent a year on.
+    func setExample(_ sentence: String, translation: String, for entryID: UUID) {
+        let sentence = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !sentence.isEmpty else { return }
+        update { library in
+            guard let index = library.entries.firstIndex(where: { $0.id == entryID }) else { return }
+            library.entries[index].example = sentence
+            library.entries[index].exampleTranslation = translation.trimmingCharacters(in: .whitespacesAndNewlines)
+            library.entries[index].updatedAt = .now
+        }
+    }
+
     /// Starts words over. Their history is kept; their schedules are not.
     func forgetSchedule(ids: Set<UUID>) {
         guard !ids.isEmpty else { return }

@@ -79,7 +79,15 @@ Two models to choose from in Settings:
 
 Nothing you ask either model leaves the machine.
 
-**And a game** — WordFall, a RealityKit vocabulary game, fed from your own decks.
+**Games**
+
+- **Dictation** — the app's own. A phrase is read aloud and you type it back;
+  all you see is its shape, one first letter per word. It plays your words, the
+  examples kept with them, or sentences you write yourself — and the companion
+  will write an example for every word that has none, straight onto the word,
+  so it turns up on the card too. Marked word by word, with a dropped accent
+  told apart from a word got wrong, and a day's goal of its own.
+- **WordFall** — a RealityKit vocabulary game, fed from your own decks.
 
 ## Install
 
@@ -143,7 +151,7 @@ Scripts/make-dmg.sh
 Tests/run.sh
 ```
 
-1001 checks over the scheduler, the queue, the day's allowance, decks and
+1089 checks over the scheduler, the queue, the day's allowance, decks and
 subdecks, the import formats, the Anki reader, the streak, the store and what the
 companion is told — compiled as a command-line binary, so they run in a couple of
 seconds and need no window.

@@ -85,6 +85,25 @@ func checkGames() {
     check("and nothing that is not a language's file is ever touched",
           !orphans.contains { $0.lastPathComponent == "notes.json" || $0.pathExtension == "txt" })
 
+    // Clearing up covers every game at once, because a game added later must
+    // not need somebody to remember it here.
+    let second = GameStorage.folder(game: "dictation", root: root)
+    try? FileManager.default.createDirectory(at: second, withIntermediateDirectories: true)
+    try? Data("{}".utf8).write(to: GameStorage.progressURL(game: "dictation", profileID: gone, root: root))
+    try? Data("{}".utf8).write(to: GameStorage.progressURL(game: "dictation", profileID: kept, root: root))
+    check("every game that has written anything is found",
+          Set(GameStorage.games(root: root)).isSuperset(of: ["Wortfall", "dictation"]))
+
+    GameStorage.pruneOrphans(keeping: [kept], root: root)
+    check("a deleted language's file goes from every game",
+          !FileManager.default.fileExists(atPath: GameStorage.progressURL(game: "dictation", profileID: gone, root: root).path))
+    check("and a language still here keeps its own",
+          FileManager.default.fileExists(atPath: GameStorage.progressURL(game: "dictation", profileID: kept, root: root).path))
+
+    GameStorage.removeProgress(forProfile: kept, root: root)
+    check("deleting a language takes every game's file with it",
+          !FileManager.default.fileExists(atPath: GameStorage.progressURL(game: "dictation", profileID: kept, root: root).path))
+
     GameStorage.removeProgress(game: "Wortfall", profileID: kept, root: root)
     check("deleting a language's progress removes exactly its file",
           !FileManager.default.fileExists(atPath: keptFile.path)

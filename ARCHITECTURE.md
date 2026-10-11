@@ -184,7 +184,7 @@ Words/
   Persistence/    The library on disk, and the store the interface talks to
   Anki/           Reading Anki packages, and guessing where their fields go
   Exchange/       Zip, and the package Words writes for another copy of itself
-  Features/       Home, Words (add + edit), Library (+ decks), Statistics, Study, Games, Export
+  Features/       Home, Words (add + edit), Library (+ decks), Statistics, Study, Games (+ Dictation), Export
 Tests/            Checks for everything above that has no window in it
 Packages/
   WordFallSDK/    The game, as its developer ships it: a local Swift package
@@ -574,6 +574,43 @@ involved — a model installed for Ollama is in Ollama's own packaging, and aski
 somebody to install a second application to use a feature of this one is the
 thing being avoided.
 
+### Dictation
+
+The app's own game, and the one that practises the half of a language the rest
+of it cannot: hearing it. A phrase is read aloud, its shape is on screen — how
+many words, and what each begins with — and the learner types it back.
+
+- **What it is played with.** Three things, each switched on or off: the words
+  of the language one at a time, the example kept with a word, and sentences
+  written straight into the game. The first two are built from the library
+  every time the game opens rather than stored, so a word renamed or deleted
+  changes the game at once; what is kept is the progress, under a key that
+  survives the editing.
+- **Where the companion fits.** Asked to, it writes an example for each word
+  that has none — and writes it onto the word, as its example, not into the
+  game. The work then counts twice: the sentence is played here, and it is on
+  the card during an ordinary sitting. Nothing is saved until the learner has
+  read it, because a model writing grammar for somebody who cannot yet check it
+  is exactly the case where a review step is not optional. `SentencePrompt`
+  holds both halves — what the model is told, and what counts as an answer: a
+  sentence that does not use the word it was asked for, or that runs past
+  sixteen words, is refused rather than saved.
+- **Marking.** Word by word, and case and punctuation are not what is being
+  practised, so they are not what is marked wrong. A letter a keyboard will not
+  make — `groß` typed `gross`, `Bär` typed `Bar` or `Baer` — is *almost*: shown,
+  not failed. The grade nobody presses comes out of the answer: everything
+  right first time is Easy, one word out is Hard, two is Again, and a phrase
+  looked up is Again whatever was typed after it.
+- **The day.** The same shape as the rest of the app — a few phrases never
+  heard before, plus everything that has come round again — moved by the same
+  FSRS. But it is the game's own schedule, in the game's own file: however well
+  a phrase is typed here, no card's due date moves. A phrase that fell apart
+  comes back four places later in the same sitting, and counts once.
+- **Clearing up.** Deleting a language takes every game's file with it, and the
+  orphans left by a game that was not running are swept on the next launch.
+  Both work from the folders on disk rather than from a list in the code, so
+  the next game added is covered without anybody remembering to add it.
+
 ### Drawn, not built
 
 Two places draw instead of building views, for the same reason. A year of
@@ -690,7 +727,9 @@ nothing may get past and the file that tries, and which characters are an
 emoji — flags and the profiles written before they
 existed, every line of the import format and the messes it arrives in, a
 transcription found by its brackets wherever it sits and a note that stays last
-whatever was left empty before it, what a tick in the export tree comes to and a
+whatever was left empty before it, a dictated phrase split into words and
+marked against what was typed — an accent dropped told apart from a word got
+wrong — and the day it builds, what a tick in the export tree comes to and a
 package written, read back byte for byte and opened into a library that already
 has half of it, what the card
 assistant is told and the library words a question names, the order of the

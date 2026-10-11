@@ -45,4 +45,38 @@ nonisolated enum GameStorage {
     static func removeProgress(game: String, profileID: UUID, root: URL = LibraryLocation.folder) {
         try? FileManager.default.removeItem(at: progressURL(game: game, profileID: profileID, root: root))
     }
+
+    /// Every game that has ever written anything, by the name of its folder.
+    ///
+    /// Read from the disk rather than from a list in the code, so that the
+    /// clearing up below covers a game added later without anybody having to
+    /// remember to add it here too.
+    static func games(root: URL = LibraryLocation.folder) -> [String] {
+        let folder = root.appending(path: folderName, directoryHint: .isDirectory)
+        let contents = (try? FileManager.default.contentsOfDirectory(
+            at: folder,
+            includingPropertiesForKeys: [.isDirectoryKey]
+        )) ?? []
+        return contents
+            .filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }
+            .map(\.lastPathComponent)
+    }
+
+    /// Throws away what every game remembered about one language, because the
+    /// language is gone.
+    static func removeProgress(forProfile profileID: UUID, root: URL = LibraryLocation.folder) {
+        for game in games(root: root) {
+            removeProgress(game: game, profileID: profileID, root: root)
+        }
+    }
+
+    /// Clears up after every game at once: files belonging to languages that
+    /// are no longer there.
+    static func pruneOrphans(keeping profiles: Set<UUID>, root: URL = LibraryLocation.folder) {
+        for game in games(root: root) {
+            for url in orphans(game: game, keeping: profiles, root: root) {
+                try? FileManager.default.removeItem(at: url)
+            }
+        }
+    }
 }

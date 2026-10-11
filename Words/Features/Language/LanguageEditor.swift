@@ -215,7 +215,11 @@ struct LanguageEditor: View {
         store.deleteProfile(id: id)
         // The games' record of this language goes with it — its levels, its
         // points, every word it asked about.
-        Task { await WortfallHost.shared.discard(id) }
+        Task {
+            await WortfallHost.shared.discard(id)
+            // And whatever every other game remembered about it.
+            GameStorage.removeProgress(forProfile: id)
+        }
         router.restoreSelection(in: store.library)
         dismiss()
     }

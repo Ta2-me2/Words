@@ -80,10 +80,4 @@ final class WortfallHost {
         GameStorage.removeProgress(game: Self.storageName, profileID: profileID)
     }
 
-    /// Removes files left behind by languages that no longer exist.
-    func pruneOrphans(keeping profiles: Set<UUID>) {
-        for url in GameStorage.orphans(game: Self.storageName, keeping: profiles) {
-            try? FileManager.default.removeItem(at: url)
-        }
-    }
 }
