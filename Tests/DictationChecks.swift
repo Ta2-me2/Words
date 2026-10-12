@@ -189,6 +189,37 @@ func checkDictation() {
     check("so four phrases are four", queue.done == 4)
     check("and then the day is over", queue.isFinished)
 
+    section("Typing")
+
+    var typing = DictationSession(queue: DictationQueue(
+        items: [DictationItem(key: "written:1", text: "the house is big", meaning: "", source: .written, entryID: nil)],
+        records: [:], allowance: 1, now: day, shuffle: false
+    ))
+    check("nothing typed yet", typing.isEmpty)
+    typing.typed = "   "
+    check("and whitespace is still nothing", typing.isEmpty)
+
+    typing.typed = "the house is big"
+    check("what was typed is what is marked",
+          DictationCheck.mark(typing.typed, against: "the house is big").isPerfect)
+
+    // The line is one field, so a word in the middle can be changed on its own
+    // without the words after it being retyped.
+    typing.typed = typing.typed.replacingOccurrences(of: "big", with: "small")
+    check("a word in the middle can be changed on its own", typing.typed == "the house is small")
+    check("and only that word is marked wrong",
+          DictationCheck.mark(typing.typed, against: "the house is big").words.count { $0.isFaulty } == 1)
+
+    typing = DictationSession(queue: DictationQueue(
+        items: [DictationItem(key: "written:2", text: "guten Tag", meaning: "", source: .written, entryID: nil)],
+        records: [:], allowance: 1, now: day, shuffle: false
+    ))
+    typing.reveal()
+    check("showing it fills the line in", typing.typed == "guten Tag")
+    check("and the answer counts as given", !typing.isEmpty)
+    check("but it is worth nothing", DictationCheck.grade(
+        DictationCheck.mark(typing.typed, against: "guten Tag"), replays: 0, revealed: true) == .again)
+
     section("What is remembered")
 
     var progress = DictationProgress()

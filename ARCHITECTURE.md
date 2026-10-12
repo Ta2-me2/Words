@@ -595,8 +595,19 @@ many words, and what each begins with — and the learner types it back.
   holds both halves — what the model is told, and what counts as an answer: a
   sentence that does not use the word it was asked for, or that runs past
   sixteen words, is refused rather than saved.
+- **The screen.** Laid out like Home — what today asks for, what the game is
+  played with, how it has been going, a year of days — and the sitting itself
+  is a sheet, like a review. The typing is one field rather than a box per
+  word, after trying it the other way: the cursor cannot be moved between
+  boxes before the next keystroke arrives, so a letter typed quickly after a
+  space lands in the box just left. One field has no such seam, and it is what
+  lets the third word of eight be clicked into and fixed without deleting the
+  five after it. The boxes are still drawn above it, filling as the words are
+  typed, with each word's shape under its own.
 - **Marking.** Word by word, and case and punctuation are not what is being
-  practised, so they are not what is marked wrong. A letter a keyboard will not
+  practised, so they are not what is marked wrong. What was typed stays where
+  it was typed, in the colour it earned, and the word it should have been
+  appears under it in green: nothing moves, so the two are compared in place. A letter a keyboard will not
   make — `groß` typed `gross`, `Bär` typed `Bar` or `Baer` — is *almost*: shown,
   not failed. The grade nobody presses comes out of the answer: everything
   right first time is Easy, one word out is Hard, two is Again, and a phrase

@@ -47,8 +47,8 @@ struct DictationCompanionView: View {
         Form {
             Section {
                 LabeledContent("Words with no example yet", value: "\(candidates.count)")
-                Stepper(value: $limit, in: 1 ... 200, step: 5) {
-                    LabeledContent("Write for", value: "\(min(limit, candidates.count))")
+                LabeledContent("Write for") {
+                    CountField(value: $limit, in: 1 ... 500)
                 }
             } header: {
                 Text("What there is")

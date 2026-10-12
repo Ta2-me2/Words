@@ -146,6 +146,23 @@ nonisolated struct DictationProgress: Codable, Sendable {
         return count
     }
 
+    /// A year of days, in the shape the activity calendar draws.
+    ///
+    /// Counted in phrases rather than in answers, which is what the rest of
+    /// the game counts: the busiest day sets the darkest square, so a learner
+    /// is measured against themselves.
+    func activity(days count: Int, asOf date: Date, calendar: Calendar = .current) -> [ActivityDay] {
+        let today = calendar.startOfDay(for: date)
+        guard count > 0, let first = calendar.date(byAdding: .day, value: -(count - 1), to: today) else { return [] }
+
+        let busiest = days.values.map(\.exercises).max() ?? 0
+        return (0 ..< count).compactMap { offset in
+            guard let when = calendar.date(byAdding: .day, value: offset, to: first) else { return nil }
+            let done = days[Self.day(when, calendar: calendar)]?.exercises ?? 0
+            return ActivityDay(date: when, count: done, level: Insights.level(done, busiest: busiest))
+        }
+    }
+
     // MARK: - Totals
 
     /// Phrases that have been answered at least once.

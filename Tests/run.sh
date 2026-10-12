@@ -13,6 +13,7 @@ swiftc -swift-version 6 -default-isolation MainActor -O \
   ../Words/Exchange/*.swift \
   ../Words/DesignSystem/DueText.swift \
   ../Words/Features/Study/StudySession.swift \
+  ../Words/Features/Games/Dictation/DictationSession.swift \
   ../Words/Features/Library/WordRow.swift ../Words/DesignSystem/Palette.swift \
   SchedulerChecks.swift QueueChecks.swift PromptChecks.swift AssistantChecks.swift PracticeOptionChecks.swift StreakChecks.swift LimitChecks.swift LibraryChecks.swift \
   DeckChecks.swift InsightsChecks.swift ActivityLayoutChecks.swift ImportChecks.swift PracticeChecks.swift \

@@ -2,165 +2,114 @@ import SwiftUI
 
 /// The exercise itself: hear a phrase, type it back, see what was missed.
 ///
-/// The phrase is never written out. What is on screen is its shape — how many
-/// words and, unless the learner asked for less, what each one begins with —
-/// and underneath it whatever has been typed so far. Everything is heard
-/// first; the eyes only ever confirm.
+/// A sheet, like a review, because a sitting is a task with a beginning and an
+/// end. The phrase is never written out. What is on screen is a box per word
+/// with its shape underneath — how long it is and, unless the learner asked
+/// for less, what it begins with — and everything is heard first; the eyes
+/// only ever confirm.
 struct DictationPlayView: View {
     let profile: LanguageProfile
     @Bindable var session: DictationSession
-    let speak: (DictationItem) -> Void
+    let hint: DictationHint
+    /// Whether there is a voice to slow down. A language macOS cannot read has
+    /// only its recordings, and a recording plays at the speed it was made.
+    let canSlowDown: Bool
+    let speak: (DictationItem, Bool) -> Void
     let answered: (DictationItem, DictationResult, ReviewGrade, Double, Bool) -> Void
     let finish: () -> Void
 
-    @FocusState private var isTyping: Bool
-    @State private var hint: DictationHint = .firstLetter
-
-    init(
-        profile: LanguageProfile,
-        session: DictationSession,
-        hint: DictationHint,
-        speak: @escaping (DictationItem) -> Void,
-        answered: @escaping (DictationItem, DictationResult, ReviewGrade, Double, Bool) -> Void,
-        finish: @escaping () -> Void
-    ) {
-        self.profile = profile
-        self.session = session
-        self.speak = speak
-        self.answered = answered
-        self.finish = finish
-        _hint = State(initialValue: hint)
-    }
+    @FocusState private var focused: Int?
 
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
 
-            ScrollView {
-                VStack(spacing: 28) {
-                    if let item = session.item {
-                        listenButton(item)
-
+            if let item = session.item {
+                ScrollView {
+                    VStack(spacing: 26) {
+                        listen
                         switch session.phase {
                         case .typing:
-                            typingBoard
+                            boxes
                         case .marked(let result, _):
-                            markedBoard(result, item: item)
+                            marked(result, item: item)
                         }
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 28)
+                    .padding(.horizontal, Metrics.gutter)
                 }
-                .frame(maxWidth: Metrics.readableWidth)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 32)
-                .padding(.horizontal, Metrics.gutter)
+            } else {
+                Spacer()
             }
 
             Divider()
             footer
         }
-        // The field is invisible; a click anywhere brings the cursor back, so
-        // a learner who clicked the window's background is never left typing
-        // into nothing.
-        .navigationTitle(GameKind.dictation.title)
-        .navigationSubtitle(profile.languagePair)
-        .contentShape(.rect)
-        .onTapGesture { isTyping = true }
-        .onAppear {
-            isTyping = true
-            if let item = session.item { speak(item) }
-        }
+        .frame(width: 680, height: 560)
+        .onAppear { begin() }
+        .onChange(of: session.item?.key) { begin() }
     }
 
-    // MARK: - Above and below
+    private func begin() {
+        guard let item = session.item else { return }
+        speak(item, false)
+        focused = 0
+    }
+
+    // MARK: - Above
 
     private var header: some View {
-        HStack(spacing: 14) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("\(session.queue.done) of \(session.queue.total)")
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(GameKind.dictation.title)
                     .font(.headline)
+                Text(progressText)
+                    .font(.caption)
                     .monospacedDigit()
-                HStack(spacing: 6) {
-                    if session.queue.dueCount > 0 {
-                        Text("\(session.queue.dueCount) to go over")
-                    }
-                    if session.queue.newCount > 0 {
-                        Text("\(session.queue.newCount) new")
-                    }
-                }
-                .font(.caption)
-                .foregroundStyle(Palette.secondaryText)
+                    .foregroundStyle(Palette.secondaryText)
             }
 
-            ProgressView(value: Double(session.queue.done), total: Double(max(1, session.queue.total)))
-                .frame(maxWidth: 200)
-
-            Spacer(minLength: 8)
+            Spacer(minLength: 12)
 
             if session.wordsWanted > 0 {
-                stat("\(Int((session.accuracy * 100).rounded()))%", "accurate")
+                figure("\(Int((session.accuracy * 100).rounded()))%", "accurate")
             }
             if session.run > 1 {
-                stat("\(session.run)", "in a row")
+                figure("\(session.run)", "in a row")
             }
 
             Button("End", action: finish)
+                .padding(.leading, 6)
         }
-        .padding(.horizontal, Metrics.gutter)
-        .padding(.vertical, 10)
-        .background(.bar)
+        .padding(.horizontal, Metrics.cardPadding)
+        .padding(.vertical, 12)
     }
 
-    private func stat(_ value: String, _ label: String) -> some View {
+    private var progressText: String {
+        var parts = ["\(session.queue.done) of \(session.queue.total)"]
+        if session.queue.dueCount > 0 { parts.append("\(session.queue.dueCount) to go over") }
+        if session.queue.newCount > 0 { parts.append("\(session.queue.newCount) new") }
+        return parts.joined(separator: " · ")
+    }
+
+    private func figure(_ value: String, _ label: String) -> some View {
         VStack(spacing: 1) {
             Text(value).font(.headline).monospacedDigit()
             Text(label).font(.caption2).foregroundStyle(Palette.secondaryText)
         }
     }
 
-    @ViewBuilder
-    private var footer: some View {
-        HStack(spacing: 12) {
-            switch session.phase {
-            case .typing:
-                Button("Hear It Again", systemImage: "arrow.clockwise") { replay() }
-                    .keyboardShortcut("r", modifiers: .command)
-                Button("Show Me", systemImage: "eye") { session.reveal() }
-                    .keyboardShortcut("h", modifiers: .command)
-                Spacer(minLength: 8)
-                Text("Return to check")
-                    .font(.caption)
-                    .foregroundStyle(Palette.tertiaryText)
-                Button("Check", action: check)
-                    .disabled(session.typed.trimmingCharacters(in: .whitespaces).isEmpty)
-
-            case .marked:
-                Button("Hear It Again", systemImage: "arrow.clockwise") { replay() }
-                    .keyboardShortcut("r", modifiers: .command)
-                Spacer(minLength: 8)
-                Text("Return to carry on")
-                    .font(.caption)
-                    .foregroundStyle(Palette.tertiaryText)
-                Button("Next", action: next)
-                    .keyboardShortcut(.defaultAction)
-            }
-        }
-        .padding(.horizontal, Metrics.gutter)
-        .padding(.vertical, 10)
-        .background(.bar)
-    }
-
     // MARK: - The sound
 
-    private func listenButton(_ item: DictationItem) -> some View {
-        VStack(spacing: 8) {
-            Button {
-                replay()
-            } label: {
+    private var listen: some View {
+        VStack(spacing: 10) {
+            Button { replay(slowly: false) } label: {
                 Image(systemName: "speaker.wave.2.fill")
-                    .font(.system(size: 30))
+                    .font(.system(size: 28))
                     .foregroundStyle(Palette.selection)
-                    .frame(width: 84, height: 84)
+                    .frame(width: 76, height: 76)
                     .background(Palette.selection.opacity(0.12), in: .circle)
             }
             .buttonStyle(.plain)
@@ -179,72 +128,100 @@ struct DictationPlayView: View {
 
     // MARK: - Typing
 
-    private var typingBoard: some View {
-        VStack(spacing: 18) {
-            WrapLayout(spacing: 14, lineSpacing: 16) {
-                ForEach(Array(session.words.enumerated()), id: \.offset) { index, word in
-                    slot(index: index, word: word)
+    private var words: [String] {
+        guard let item = session.item else { return [] }
+        return DictationText.words(of: item.text)
+    }
+
+    private var boxes: some View {
+        let written = DictationText.words(of: session.typed)
+        let active = written.count - (session.typed.last?.isWhitespace == true ? 0 : 1)
+
+        return VStack(spacing: 22) {
+            // What has been typed, word by word, over the shape each one has
+            // to take. Read-only: the typing happens in the field below, so
+            // there is no cursor to lose between boxes.
+            WrapLayout(spacing: 12, lineSpacing: 18) {
+                ForEach(Array(words.enumerated()), id: \.offset) { index, word in
+                    slot(index: index, word: word, written: written, active: active)
                 }
             }
             .frame(maxWidth: .infinity)
 
-            // Where the keys actually land. Drawn as nothing: what the learner
-            // watches is the row of words above, which is the whole point of
-            // the exercise.
-            TextField("", text: $session.typed)
+            TextField("", text: $session.typed, prompt: Text("Type what you hear"))
                 .textFieldStyle(.plain)
-                .focused($isTyping)
+                .font(.title2)
+                .multilineTextAlignment(.center)
+                .focused($focused, equals: 0)
                 .onSubmit(check)
-                .opacity(0.001)
-                .frame(height: 1)
-                .accessibilityLabel("What you hear")
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(Palette.card, in: .rect(cornerRadius: Metrics.cardRadius, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: Metrics.cardRadius, style: .continuous)
+                        .strokeBorder(focused == 0 ? Palette.selection : Palette.separator, lineWidth: focused == 0 ? 2 : 1)
+                }
+                .frame(maxWidth: 520)
 
-            if !isTyping {
-                Label("Click here to type", systemImage: "cursorarrow.click")
-                    .font(.caption)
-                    .foregroundStyle(Palette.warning)
-            }
+            Text("Click anywhere in it to fix a word you have already passed.")
+                .font(.caption)
+                .foregroundStyle(Palette.tertiaryText)
         }
     }
 
-    /// One word: what has been typed into it, over the shape it has to take.
-    private func slot(index: Int, word: String) -> some View {
-        let typed = session.typedWords
-        let written = index < typed.count ? typed[index] : ""
-        let isActive = index == (session.isMidWord ? max(0, typed.count - 1) : typed.count)
+    /// One word of the phrase: what has been typed for it, and underneath the
+    /// shape it has to take.
+    private func slot(index: Int, word: String, written: [String], active: Int) -> some View {
+        let typed = index < written.count ? written[index] : ""
+        let isActive = index == active
 
-        return VStack(spacing: 3) {
-            Text(written.isEmpty ? " " : written)
-                .font(.title3.weight(.medium))
-                .foregroundStyle(written.isEmpty ? Palette.tertiaryText : Palette.primaryText)
-
-            Rectangle()
-                .fill(isActive ? Palette.selection : Palette.separator)
-                .frame(height: isActive ? 2 : 1)
+        return VStack(spacing: 4) {
+            Text(typed.isEmpty ? " " : typed)
+                .font(.title2.weight(.medium))
+                .foregroundStyle(typed.isEmpty ? Palette.tertiaryText : Palette.primaryText)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 7)
+                .frame(maxWidth: .infinity)
+                .background(
+                    isActive ? Palette.selection.opacity(0.12) : Palette.subtleFill.opacity(0.6),
+                    in: .rect(cornerRadius: Metrics.smallRadius, style: .continuous)
+                )
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(isActive ? Palette.selection : Palette.separator)
+                        .frame(height: isActive ? 2 : 1)
+                }
 
             Text(hint.drawn(for: word))
                 .font(.caption.monospaced())
                 .foregroundStyle(Palette.tertiaryText)
                 .tracking(1)
         }
-        .frame(minWidth: max(28, CGFloat(word.count) * 11))
+        .frame(width: width(of: word))
         .animation(.easeOut(duration: 0.12), value: isActive)
+    }
+
+    /// Wide enough for the word that has to go in it, and never so narrow that
+    /// a three-letter box looks like a mistake.
+    private func width(of word: String) -> CGFloat {
+        min(260, max(62, CGFloat(word.count) * 16 + 26))
     }
 
     // MARK: - Marked
 
-    private func markedBoard(_ result: DictationResult, item: DictationItem) -> some View {
-        VStack(spacing: 18) {
-            WrapLayout(spacing: 14, lineSpacing: 16) {
+    private func marked(_ result: DictationResult, item: DictationItem) -> some View {
+        VStack(spacing: 20) {
+            WrapLayout(spacing: 12, lineSpacing: 18) {
                 ForEach(result.words) { word in
-                    marked(word)
+                    markedBox(word)
                 }
             }
             .frame(maxWidth: .infinity)
 
             if !result.extra.isEmpty {
                 Text("Nothing was said after that: \(result.extra.joined(separator: " "))")
-                    .font(.caption)
+                    .font(.callout)
                     .foregroundStyle(Palette.critical)
             }
 
@@ -259,31 +236,38 @@ struct DictationPlayView: View {
         }
     }
 
-    private func marked(_ word: DictationWord) -> some View {
-        VStack(spacing: 3) {
-            Text(word.expected)
-                .font(.title3.weight(.medium))
-                .foregroundStyle(colour(of: word.mark))
+    /// What was typed stays where it was typed, in the colour it earned; the
+    /// word it should have been appears under it, in green. Nothing moves, so
+    /// the two are compared in place.
+    private func markedBox(_ word: DictationWord) -> some View {
+        let widest = word.expected.count >= word.typed.count ? word.expected : word.typed
 
-            Rectangle()
-                .fill(colour(of: word.mark).opacity(0.6))
-                .frame(height: 2)
+        return VStack(spacing: 4) {
+            Text(word.typed.isEmpty ? "—" : word.typed)
+                .font(.title2.weight(.medium))
+                .foregroundStyle(word.typed.isEmpty ? Palette.tertiaryText : colour(of: word.mark))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 7)
+                .frame(maxWidth: .infinity)
+                .background(
+                    colour(of: word.mark).opacity(0.10),
+                    in: .rect(cornerRadius: Metrics.smallRadius, style: .continuous)
+                )
+                .overlay(alignment: .bottom) {
+                    Rectangle().fill(colour(of: word.mark)).frame(height: 2)
+                }
 
-            // Only where it is worth seeing: what was typed instead.
-            if word.mark == .wrong || word.mark == .almost, !word.typed.isEmpty {
-                Text(word.typed)
-                    .font(.caption)
-                    .strikethrough(word.mark == .wrong)
-                    .foregroundStyle(Palette.tertiaryText)
-            } else if word.mark == .missing {
-                Text("missed")
-                    .font(.caption)
-                    .foregroundStyle(Palette.tertiaryText)
+            // Only where they differ: a word already right does not need
+            // telling twice.
+            if word.mark == .right {
+                Text(" ").font(.callout)
             } else {
-                Text(" ").font(.caption)
+                Text(word.expected)
+                    .font(.callout.weight(.medium))
+                    .foregroundStyle(Palette.complete)
             }
         }
-        .frame(minWidth: max(28, CGFloat(word.expected.count) * 11))
+        .frame(width: width(of: widest))
     }
 
     private func colour(of mark: DictationMark) -> Color {
@@ -314,21 +298,65 @@ struct DictationPlayView: View {
         }
     }
 
+    // MARK: - Below
+
+    @ViewBuilder
+    private var footer: some View {
+        HStack(spacing: 10) {
+            Button("Hear It Again", systemImage: "arrow.clockwise") { replay(slowly: false) }
+                .keyboardShortcut("r", modifiers: .command)
+
+            Button("Slower", systemImage: "tortoise") { replay(slowly: true) }
+                .keyboardShortcut("l", modifiers: .command)
+                .disabled(!canSlowDown)
+                .help(canSlowDown
+                      ? "Hear it read slowly (⌘L)"
+                      : "macOS has no voice for \(LanguageCatalog.name(for: profile.learningCode)) to slow down.")
+
+            if case .typing = session.phase {
+                Button("Show Me", systemImage: "eye") { session.reveal() }
+                    .keyboardShortcut("h", modifiers: .command)
+            }
+
+            Spacer(minLength: 8)
+
+            switch session.phase {
+            case .typing:
+                Text("Return to check")
+                    .font(.caption)
+                    .foregroundStyle(Palette.tertiaryText)
+                Button("Check", action: check)
+                    .buttonStyle(.borderedProminent)
+                    .disabled(session.isEmpty)
+
+            case .marked:
+                Text("Return to carry on")
+                    .font(.caption)
+                    .foregroundStyle(Palette.tertiaryText)
+                Button("Next", action: next)
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(.horizontal, Metrics.cardPadding)
+        .padding(.vertical, 12)
+    }
+
     // MARK: - Doing
 
-    private func replay() {
+    private func replay(slowly: Bool) {
         guard let item = session.item else { return }
         if case .typing = session.phase { session.heardAgain() }
-        speak(item)
-        isTyping = true
+        speak(item, slowly)
     }
 
     private func check() {
         guard case .typing = session.phase else { return }
         // A stray Return is not an answer. Nothing typed and nothing shown
         // means the learner is still listening.
-        guard session.revealed || !session.typed.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        guard session.revealed || !session.isEmpty else { return }
         session.check()
+        focused = nil
     }
 
     /// Written down here and nowhere else: an answer is recorded once, when
@@ -338,11 +366,6 @@ struct DictationPlayView: View {
         let seconds = session.lastSeconds
         let counted = session.advance()
         answered(item, result, grade, seconds, counted)
-        if let next = session.item {
-            speak(next)
-            isTyping = true
-        } else {
-            finish()
-        }
+        if session.item == nil { finish() }
     }
 }

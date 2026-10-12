@@ -20,10 +20,17 @@ final class DictationSession {
     private(set) var queue: DictationQueue
     private(set) var phase: Phase = .typing
 
-    /// What the learner has typed so far.
+    /// What the learner has typed, as one line.
+    ///
+    /// One field rather than a box per word, after trying it the other way:
+    /// moving the cursor between boxes cannot be made to happen before the
+    /// next keystroke arrives, so a letter typed quickly after a space lands
+    /// in the box that was just left. One field has no such seam — and it is
+    /// the thing that lets the third word of eight be clicked into and fixed
+    /// without deleting the five after it, which is the whole reason for
+    /// having a real field at all.
     var typed = ""
 
-    /// How many times the phrase has been heard again after the first.
     private(set) var replays = 0
 
     /// Whether the answer was looked up before it was given.
@@ -49,6 +56,10 @@ final class DictationSession {
         self.queue = queue
     }
 
+    var isEmpty: Bool {
+        typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     var item: DictationItem? { queue.current }
     var isFinished: Bool { queue.isFinished }
 
@@ -60,17 +71,6 @@ final class DictationSession {
     var words: [String] {
         guard let item else { return [] }
         return DictationText.words(of: item.text)
-    }
-
-    /// What has been typed, word by word, and whether the learner is still in
-    /// the middle of one — which is what the caret is drawn against.
-    var typedWords: [String] {
-        DictationText.words(of: typed)
-    }
-
-    var isMidWord: Bool {
-        guard let last = typed.last else { return false }
-        return !last.isWhitespace
     }
 
     // MARK: - Playing

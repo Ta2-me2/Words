@@ -163,6 +163,35 @@ nonisolated enum DictationMaterial {
         return items
     }
 
+    /// What tomorrow will ask for, if nothing is answered before then.
+    ///
+    /// The same promise the Home screen makes about cards: a day's work is
+    /// easier to turn up for when yesterday said how big it would be.
+    static func tomorrow(
+        items: [DictationItem],
+        records: [String: DictationRecord],
+        settings: DictationSettings,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> (reviews: Int, new: Int) {
+        guard let start = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)),
+              let end = calendar.date(byAdding: .day, value: 1, to: start)
+        else { return (0, 0) }
+
+        var reviews = 0
+        var untouched = 0
+        for item in items {
+            guard let record = records[item.key], record.attempts > 0 else {
+                untouched += 1
+                continue
+            }
+            guard let due = record.scheduling.dueDate else { continue }
+            // Everything already waiting is waiting tomorrow as well.
+            if due < end { reviews += 1 }
+        }
+        return (reviews, min(settings.dailyNew, untouched))
+    }
+
     /// How many of today's new phrases are still owed.
     static func allowance(_ settings: DictationSettings, done: DictationDay) -> Int {
         max(0, settings.dailyNew - done.newDone)

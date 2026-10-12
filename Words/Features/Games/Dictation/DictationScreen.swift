@@ -3,15 +3,17 @@ import WordsCompanion
 
 /// Dictation, played with this language's own words.
 ///
-/// The screen before the game is the game's own home: what today asks for,
-/// what it is played with, and how the last fortnight went. A learner who
-/// opens it and does not want to play should still learn something from it.
+/// The screen before the game is laid out like Home: what today asks for at
+/// the top, then what the game is played with, then how it has been going. A
+/// learner who opens it and does not want to play should still learn something
+/// from it.
 struct DictationScreen: View {
     let profile: LanguageProfile
     let close: () -> Void
 
     @Environment(LibraryStore.self) private var store
     @Environment(AppSettings.self) private var settings
+    @Environment(AppClock.self) private var clock
 
     @State private var progress = DictationStore()
     @State private var session: DictationSession?
@@ -26,16 +28,7 @@ struct DictationScreen: View {
 
     var body: some View {
         Group {
-            if let session {
-                DictationPlayView(
-                    profile: profile,
-                    session: session,
-                    hint: progress.progress.settings.hint,
-                    speak: say,
-                    answered: record,
-                    finish: end
-                )
-            } else if let failure = progress.failure {
+            if let failure = progress.failure {
                 ContentUnavailableView {
                     Label("Your Progress Couldn’t Be Read", systemImage: "exclamationmark.triangle")
                 } description: {
@@ -51,6 +44,19 @@ struct DictationScreen: View {
         }
         .task(id: profile.id) { await progress.load(for: profile.id) }
         .onDisappear { Task { await progress.flush() } }
+        // The sitting is a sheet, like a review: a task with a beginning and
+        // an end, over the screen that counts what it did.
+        .sheet(item: $session) { session in
+            DictationPlayView(
+                profile: profile,
+                session: session,
+                hint: progress.progress.settings.hint,
+                canSlowDown: Speaker.voice(for: profile) != nil,
+                speak: say,
+                answered: record,
+                finish: { self.session = nil; speaker.stop(); Task { await progress.flush() } }
+            )
+        }
         .sheet(item: $sheet) { which in
             switch which {
             case .sentences:
@@ -61,19 +67,15 @@ struct DictationScreen: View {
         }
     }
 
-    // MARK: - Before playing
+    // MARK: - The screen
 
     private var home: some View {
-        let items = material
-        let day = progress.progress.day(on: .now)
-        let allowance = DictationMaterial.allowance(progress.progress.settings, done: day)
-        let queue = DictationQueue(items: items, records: progress.progress.records, allowance: allowance)
-
-        return ScrollView {
+        ScrollView {
             VStack(alignment: .leading, spacing: Metrics.sectionSpacing) {
-                today(queue: queue, day: day, items: items)
-                playedWith(items)
-                howItGoes()
+                today
+                playedWith
+                howItGoes
+                activity
             }
             .frame(maxWidth: Metrics.pageWidth, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .center)
@@ -89,96 +91,155 @@ struct DictationScreen: View {
         }
     }
 
-    @ViewBuilder
-    private func today(queue: DictationQueue, day: DictationDay, items: [DictationItem]) -> some View {
-        SectionCard(title: "Today") {
-            if items.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("There is nothing to hear yet.")
-                        .foregroundStyle(Palette.secondaryText)
-                    Text("Add words to this language, write sentences of your own, or let the companion make a sentence for each word you have.")
-                        .font(.callout)
-                        .foregroundStyle(Palette.tertiaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            } else {
-                HStack(alignment: .top, spacing: 28) {
-                    figure("\(queue.dueCount)", "to go over")
-                    figure("\(queue.newCount)", "new")
-                    figure("\(day.exercises)", "done today")
-                    if day.wordsWanted > 0 {
-                        figure("\(Int((day.accuracy * 100).rounded()))%", "accurate")
+    // MARK: - Today
+
+    private var items: [DictationItem] {
+        DictationMaterial.items(
+            for: profile,
+            in: store.library,
+            settings: progress.progress.settings,
+            sentences: progress.progress.sentences
+        )
+    }
+
+    private var today: some View {
+        let items = items
+        let day = progress.progress.day(on: clock.now)
+        let allowance = DictationMaterial.allowance(progress.progress.settings, done: day)
+        let queue = DictationQueue(items: items, records: progress.progress.records, allowance: allowance, now: clock.now)
+        let next = DictationMaterial.tomorrow(
+            items: items,
+            records: progress.progress.records,
+            settings: progress.progress.settings,
+            now: clock.now
+        )
+
+        return VStack(alignment: .leading, spacing: Metrics.headerSpacing) {
+            SectionHeader("Today")
+
+            GroupedRows {
+                GroupedRow {
+                    HStack(alignment: .center, spacing: 26) {
+                        StatTile(value: queue.dueCount, label: "To go over")
+                        StatTile(value: queue.newCount, label: "New")
+                        StatTile(value: day.exercises, label: "Done today")
+
+                        Spacer(minLength: 12)
+
+                        if items.isEmpty {
+                            Button("Add Words") { sheet = .sentences }
+                                .controlSize(.large)
+                        } else if queue.total > 0 {
+                            Button("Start") { start(items: items, allowance: allowance) }
+                                .buttonStyle(.borderedProminent)
+                                .controlSize(.large)
+                                .fixedSize()
+                                .keyboardShortcut(.defaultAction)
+                        } else {
+                            HStack(spacing: 12) {
+                                Label("Up to date", systemImage: "checkmark.circle")
+                                    .font(.callout)
+                                    .foregroundStyle(Palette.secondaryText)
+
+                                // Finishing the day's phrases should not mean
+                                // there is nothing left to do here.
+                                Button("Practise") {
+                                    start(items: items, allowance: progress.progress.settings.dailyNew)
+                                }
+                                .controlSize(.large)
+                                .fixedSize()
+                                .help("Nothing you do now changes a schedule.")
+                            }
+                        }
                     }
-                    Spacer(minLength: 8)
+                    .padding(.vertical, 2)
                 }
 
-                if queue.total == 0 {
-                    Label("That is everything for today. Come back tomorrow.", systemImage: "checkmark.circle")
-                        .foregroundStyle(Palette.complete)
-                }
-
-                HStack(spacing: 10) {
-                    Button(queue.total == 0 ? "Practise Anyway" : "Start") {
-                        start(items: items, allowance: queue.total == 0 ? progress.progress.settings.dailyNew : nil)
+                GroupedRow(showsDivider: false) {
+                    HStack(spacing: 6) {
+                        Text("Tomorrow")
+                            .foregroundStyle(Palette.secondaryText)
+                        Text(sentence(for: next))
+                            .monospacedDigit()
+                        Spacer(minLength: 0)
                     }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(items.isEmpty)
-
-                    if queue.total == 0 {
-                        Text("Nothing you do now changes a schedule.")
-                            .font(.caption)
-                            .foregroundStyle(Palette.tertiaryText)
-                    }
+                    .font(.callout)
                 }
             }
         }
     }
 
-    private func figure(_ value: String, _ label: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(value).font(.title2.weight(.medium)).monospacedDigit()
-            Text(label).font(.caption).foregroundStyle(Palette.secondaryText)
+    private func sentence(for plan: (reviews: Int, new: Int)) -> String {
+        var parts: [String] = []
+        if plan.reviews > 0 {
+            parts.append("\(plan.reviews) to go over")
         }
+        if plan.new > 0 {
+            parts.append("\(plan.new) new")
+        }
+        return parts.isEmpty ? "nothing waiting" : parts.joined(separator: " · ")
     }
 
-    @ViewBuilder
-    private func playedWith(_ items: [DictationItem]) -> some View {
-        @Bindable var progress = progress
+    // MARK: - What it plays
 
-        SectionCard(title: "Played with") {
-            Form {
+    private var playedWith: some View {
+        let items = items
+
+        return VStack(alignment: .leading, spacing: Metrics.headerSpacing) {
+            SectionHeader(title: "What It Plays") {
+                Text("\(items.count) \(items.count == 1 ? "phrase" : "phrases")")
+                    .font(.caption)
+                    .monospacedDigit()
+                    .foregroundStyle(Palette.secondaryText)
+            }
+
+            GroupedRows {
                 ForEach(DictationSource.allCases, id: \.self) { source in
-                    Toggle(isOn: binding(for: source)) {
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(title(of: source))
-                            Text("\(items.count { $0.source == source }) ready")
-                                .font(.caption)
-                                .foregroundStyle(Palette.secondaryText)
+                    GroupedRow {
+                        Toggle(isOn: binding(for: source)) {
+                            HStack(spacing: 8) {
+                                Text(title(of: source))
+                                Spacer(minLength: 12)
+                                Text("\(items.count { $0.source == source })")
+                                    .monospacedDigit()
+                                    .foregroundStyle(Palette.secondaryText)
+                            }
                         }
                     }
                 }
 
-                Picker("Deck", selection: deckBinding) {
-                    Text("The whole language").tag(UUID?.none)
-                    Divider()
-                    ForEach(store.library.decks(in: profile.id)) { deck in
-                        Text(store.library.path(of: deck)).tag(Optional(deck.id))
+                GroupedRow {
+                    setting("Deck", help: "Which words the first two come from. Sentences you wrote here are always played.") {
+                        Picker("", selection: deckBinding) {
+                            Text("The whole language").tag(UUID?.none)
+                            Divider()
+                            ForEach(store.library.decks(in: profile.id)) { deck in
+                                Text(store.library.path(of: deck)).tag(Optional(deck.id))
+                            }
+                        }
+                        .labelsHidden()
+                        .fixedSize()
                     }
                 }
 
-                Picker("Give away", selection: hintBinding) {
-                    ForEach(DictationHint.allCases) { hint in
-                        Text(hint.title).tag(hint)
+                GroupedRow {
+                    setting("Give away", help: progress.progress.settings.hint.detail) {
+                        Picker("", selection: hintBinding) {
+                            ForEach(DictationHint.allCases) { hint in
+                                Text(hint.title).tag(hint)
+                            }
+                        }
+                        .labelsHidden()
+                        .fixedSize()
                     }
                 }
 
-                Stepper(value: dailyBinding, in: 1 ... 100, step: 5) {
-                    LabeledContent("New a day", value: "\(progress.progress.settings.dailyNew)")
+                GroupedRow(showsDivider: false) {
+                    setting("New a day", help: "How many phrases never heard before to start in a day.") {
+                        CountField(value: dailyBinding, in: 1 ... 200)
+                    }
                 }
             }
-            .formStyle(.grouped)
-            .fixedSize(horizontal: false, vertical: true)
-            .scrollDisabled(true)
 
             HStack(spacing: 10) {
                 Button("Write Sentences…") { sheet = .sentences }
@@ -187,57 +248,88 @@ struct DictationScreen: View {
                     .help(companionReady
                           ? "The companion writes an example for each word that has none."
                           : "Choose a companion in Settings first.")
+                Spacer(minLength: 0)
             }
         }
     }
 
-    @ViewBuilder
-    private func howItGoes() -> some View {
+    /// A row of the settings block: what it is on the left, the control on the
+    /// right, like every other grouped row in the app.
+    private func setting(_ title: String, help: String, @ViewBuilder control: () -> some View) -> some View {
+        HStack(spacing: 12) {
+            Text(title)
+            Spacer(minLength: 12)
+            control()
+        }
+        .help(help)
+    }
+
+    // MARK: - How it goes
+
+    private var howItGoes: some View {
         let whole = progress.progress
+        let day = whole.day(on: clock.now)
 
-        SectionCard(title: "How it goes") {
-            HStack(alignment: .top, spacing: 28) {
-                figure("\(whole.started)", "phrases started")
-                figure("\(whole.known)", "known well")
-                figure(whole.lifetimeAccuracy > 0 ? "\(Int((whole.lifetimeAccuracy * 100).rounded()))%" : "—", "accurate")
-                figure("\(whole.streak(on: .now))", "day streak")
-                Spacer(minLength: 8)
-            }
+        return VStack(alignment: .leading, spacing: Metrics.headerSpacing) {
+            SectionHeader("How It Goes")
 
-            let recent = whole.recentDays(before: .now, count: 14)
-            if recent.isEmpty {
-                Text("Nothing played yet.")
-                    .font(.callout)
-                    .foregroundStyle(Palette.tertiaryText)
-            } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(recent.prefix(7), id: \.day) { day in
-                        HStack {
-                            Text(day.day).font(.caption.monospaced()).foregroundStyle(Palette.secondaryText)
-                            Spacer()
-                            Text("\(day.work.exercises) phrases")
-                                .font(.caption).monospacedDigit()
-                            Text("\(Int((day.work.accuracy * 100).rounded()))%")
-                                .font(.caption).monospacedDigit()
-                                .foregroundStyle(Palette.secondaryText)
-                                .frame(width: 44, alignment: .trailing)
-                        }
+            GroupedRows {
+                GroupedRow {
+                    HStack(alignment: .center, spacing: 26) {
+                        StatTile(value: whole.started, label: "Started")
+                        StatTile(value: whole.known, label: "Known well")
+                        StatTile(value: whole.streak(on: clock.now), label: "Day streak")
+                        Spacer(minLength: 12)
                     }
+                    .padding(.vertical, 2)
+                }
+
+                GroupedRow(showsDivider: false) {
+                    HStack(alignment: .center, spacing: 26) {
+                        LabelledValue(
+                            value: whole.lifetimeAccuracy > 0 ? percent(whole.lifetimeAccuracy) : "—",
+                            label: "Accurate"
+                        )
+                        LabelledValue(value: day.wordsWanted > 0 ? percent(day.accuracy) : "—", label: "Today")
+                        LabelledValue(value: minutes(day.seconds), label: "Time today")
+                        Spacer(minLength: 12)
+                    }
+                    .padding(.vertical, 2)
                 }
             }
         }
     }
 
-    // MARK: - What it is played with
-
-    private var material: [DictationItem] {
-        DictationMaterial.items(
-            for: profile,
-            in: store.library,
-            settings: progress.progress.settings,
-            sentences: progress.progress.sentences
-        )
+    private func percent(_ share: Double) -> String {
+        "\(Int((share * 100).rounded()))%"
     }
+
+    private func minutes(_ seconds: Double) -> String {
+        guard seconds >= 60 else { return seconds > 0 ? "under a minute" : "—" }
+        let whole = Int((seconds / 60).rounded())
+        return "\(whole) min"
+    }
+
+    // MARK: - Activity
+
+    private var activity: some View {
+        let days = progress.progress.activity(days: 53 * 7, asOf: clock.now)
+        let total = days.reduce(0) { $0 + $1.count }
+
+        return VStack(alignment: .leading, spacing: Metrics.headerSpacing) {
+            SectionHeader(title: "Activity") {
+                Text(total > 0 ? "\(total) phrases" : "")
+                    .font(.caption)
+                    .monospacedDigit()
+                    .foregroundStyle(Palette.secondaryText)
+            }
+
+            ActivityCalendar(days: days)
+                .cardSurface()
+        }
+    }
+
+    // MARK: - The settings behind it
 
     private func title(of source: DictationSource) -> String {
         switch source {
@@ -293,21 +385,21 @@ struct DictationScreen: View {
 
     // MARK: - Playing
 
-    private func start(items: [DictationItem], allowance: Int?) {
-        let day = progress.progress.day(on: .now)
-        let owed = allowance ?? DictationMaterial.allowance(progress.progress.settings, done: day)
+    private func start(items: [DictationItem], allowance: Int) {
         session = DictationSession(queue: DictationQueue(
             items: items,
             records: progress.progress.records,
-            allowance: owed
+            allowance: allowance,
+            now: clock.now
         ))
     }
 
-    private func say(_ item: DictationItem) {
+    private func say(_ item: DictationItem, slowly: Bool) {
         // A word with a recording of its own is played rather than read: the
         // learner's own voice, or whoever recorded the deck, is better
-        // listening practice than a synthesiser.
-        if let entryID = item.entryID, let entry = store.library.entry(id: entryID) {
+        // listening practice than a synthesiser. Slowed down, there is no
+        // recording to slow — the voice reads it instead.
+        if !slowly, let entryID = item.entryID, let entry = store.library.entry(id: entryID) {
             switch item.source {
             case .word where entry.audio != nil:
                 speaker.speak(entry, in: profile, store: store)
@@ -319,7 +411,14 @@ struct DictationScreen: View {
                 break
             }
         }
-        speaker.speak(item.text, in: profile)
+
+        guard slowly else {
+            speaker.speak(item.text, in: profile)
+            return
+        }
+        var slower = profile
+        slower.speechRate = max(0.25, profile.speechRate * 0.6)
+        speaker.speak(item.text, in: slower)
     }
 
     private func record(
@@ -335,28 +434,12 @@ struct DictationScreen: View {
             grade: grade,
             seconds: seconds,
             countsTowardsTheDay: counted,
-            retention: profile.desiredRetention
+            retention: profile.desiredRetention,
+            at: clock.now
         )
-    }
-
-    private func end() {
-        session = nil
-        speaker.stop()
-        Task { await progress.flush() }
     }
 }
 
-/// A titled block on the game's home screen.
-private struct SectionCard<Content: View>: View {
-    let title: String
-    @ViewBuilder var content: () -> Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
-            Text(title)
-                .font(.headline)
-            content()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
+extension DictationSession: Identifiable {
+    nonisolated var id: ObjectIdentifier { ObjectIdentifier(self) }
 }
