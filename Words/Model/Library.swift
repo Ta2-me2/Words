@@ -135,6 +135,20 @@ nonisolated struct Library: Codable, Sendable {
             .sorted { $0.createdAt > $1.createdAt }
     }
 
+    /// The words of a language, or of one of its decks, that have no example
+    /// sentence yet — oldest first, which is the order anybody filling them in
+    /// wants: a word learned months ago has waited longest for one.
+    func entriesWithoutExamples(in profileID: UUID, deckID: UUID? = nil) -> [Entry] {
+        let scope = scope(forDeck: deckID)
+        return entries
+            .filter { entry in
+                guard entry.profileID == profileID else { return false }
+                guard entry.example.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+                return scope?.contains(entry) ?? true
+            }
+            .sorted { $0.createdAt < $1.createdAt }
+    }
+
     func deck(id: UUID?) -> Deck? {
         guard let id else { return nil }
         return decks.first { $0.id == id }

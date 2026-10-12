@@ -62,7 +62,7 @@ struct DictationScreen: View {
             case .sentences:
                 DictationSentencesView(profile: profile, store: progress)
             case .companion:
-                DictationCompanionView(profile: profile, deckID: progress.progress.settings.deckID)
+                MakeSentencesView(profile: profile, deckID: progress.progress.settings.deckID)
             }
         }
     }

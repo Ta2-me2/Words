@@ -196,21 +196,4 @@ nonisolated enum DictationMaterial {
     static func allowance(_ settings: DictationSettings, done: DictationDay) -> Int {
         max(0, settings.dailyNew - done.newDone)
     }
-
-    /// The words of a deck or language that have no example yet — what the
-    /// companion is pointed at.
-    static func wordsWithoutExamples(
-        for profile: LanguageProfile,
-        in library: Library,
-        deckID: UUID?
-    ) -> [Entry] {
-        let scope = deckID.flatMap { library.scope(forDeck: $0) }
-        return library.entries(in: profile.id)
-            .filter { entry in
-                guard entry.example.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
-                guard let scope else { return true }
-                return scope.contains(entry)
-            }
-            .sorted { $0.createdAt < $1.createdAt }
-    }
 }

@@ -218,8 +218,10 @@ nonisolated enum WordImport {
     }
 
     /// Words are the same word whatever the case and whatever article was typed
-    /// in front of them.
-    private static func key(_ term: String) -> String {
+    /// in front of them. Also how a screen holding something of its own about
+    /// a pasted word — an example the companion wrote for it — finds it again
+    /// after the list has been read afresh.
+    static func key(_ term: String) -> String {
         term.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 }

@@ -22,6 +22,20 @@ struct ImportWordsView: View {
     @State private var added: Int?
     @State private var failure: String?
 
+    /// The companion writing examples for rows that have none, and what it
+    /// wrote. Kept beside the plan rather than in it: the list is read again
+    /// from the text on every keystroke, and a sentence that took the model
+    /// five seconds must not vanish because a letter was typed three lines
+    /// below it. Filed under the word, which is what survives a reread.
+    @State private var writer = SentenceWriter()
+    @State private var written: [String: Written] = [:]
+
+    /// An example written for a word that is not in the library yet.
+    private struct Written {
+        var sentence: String
+        var translation: String
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
             editor
@@ -127,6 +141,12 @@ struct ImportWordsView: View {
 
             Spacer(minLength: 0)
 
+            if let refusal = writer.lastRefusal {
+                Label(refusal, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(Palette.warning)
+                    .lineLimit(2)
+            }
+
             ListPromptButton(profile: profile)
 
             Button("Choose File…") { isChoosingFile = true }
@@ -172,14 +192,15 @@ struct ImportWordsView: View {
                 Text(word.meaning)
                     .opacity(word.isImportable ? 1 : 0.45)
             }
-            .width(min: 100, ideal: 160)
+            .width(min: 90, ideal: 130)
 
             TableColumn("Example") { word in
-                Text(word.example)
-                    .foregroundStyle(Palette.secondaryText)
+                example(for: word)
                     .opacity(word.isImportable ? 1 : 0.45)
             }
-            .width(min: 100, ideal: 200)
+            // Wide, because what goes in it is a whole sentence and, once the
+            // companion has written one, its translation underneath.
+            .width(min: 140, ideal: 320)
 
             TableColumn("") { word in
                 if word.duplicate != nil {
@@ -191,7 +212,62 @@ struct ImportWordsView: View {
             .width(min: 70, ideal: 90)
         }
         .alternatingRowBackgrounds(.disabled)
-        .frame(height: 190)
+        .frame(height: 210)
+    }
+
+    /// What the Example column shows: the example the list carried, the one
+    /// the companion wrote — which can be corrected here, where it is read —
+    /// or the button that asks for one.
+    @ViewBuilder
+    private func example(for word: ImportedWord) -> some View {
+        let key = WordImport.key(word.term)
+
+        if written[key] != nil {
+            VStack(alignment: .leading, spacing: 1) {
+                TextField("Example", text: sentence(of: key))
+                    .textFieldStyle(.plain)
+                TextField("Translation", text: translation(of: key))
+                    .textFieldStyle(.plain)
+                    .font(.caption)
+                    .foregroundStyle(Palette.secondaryText)
+            }
+        } else if !word.example.isEmpty {
+            Text(word.example)
+                .foregroundStyle(Palette.secondaryText)
+        } else if word.isImportable {
+            HStack(spacing: 6) {
+                SentenceButton(
+                    profile: profile,
+                    key: key,
+                    word: word.term,
+                    meaning: word.meaning,
+                    showsTitle: false,
+                    writer: writer,
+                    filled: { sentence, translation in
+                        written[key] = Written(sentence: sentence, translation: translation)
+                    }
+                )
+                if let refusal = writer.refusal(for: key) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(Palette.warning)
+                        .help(refusal)
+                }
+            }
+        }
+    }
+
+    private func sentence(of key: String) -> Binding<String> {
+        Binding(
+            get: { written[key]?.sentence ?? "" },
+            set: { written[key]?.sentence = $0 }
+        )
+    }
+
+    private func translation(of key: String) -> Binding<String> {
+        Binding(
+            get: { written[key]?.translation ?? "" },
+            set: { written[key]?.translation = $0 }
+        )
     }
 
     // MARK: - Doing it
@@ -215,6 +291,8 @@ struct ImportWordsView: View {
                 Button("Clear") {
                     text = ""
                     added = nil
+                    writer.cancel()
+                    written = [:]
                 }
             }
 
@@ -248,10 +326,25 @@ struct ImportWordsView: View {
     }
 
     private func performImport() {
-        let count = store.addEntries(plan.importable, profileID: profile.id, deckID: deckID)
+        let count = store.addEntries(importing, profileID: profile.id, deckID: deckID)
         text = ""
         plan = ImportPlan()
+        writer.cancel()
+        written = [:]
         added = count
+    }
+
+    /// The words to add, with whatever the companion wrote for them. The plan
+    /// stays what the text says; this is where the two are put together, once,
+    /// at the moment it matters.
+    private var importing: [ImportedWord] {
+        plan.importable.map { word in
+            guard word.example.isEmpty, let written = written[WordImport.key(word.term)] else { return word }
+            var word = word
+            word.example = written.sentence
+            word.exampleTranslation = written.translation
+            return word
+        }
     }
 
     // MARK: - Files

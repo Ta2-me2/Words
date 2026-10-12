@@ -62,6 +62,7 @@ await checkPersistence()
 await checkStore()
 checkExchange()
 checkDictation()
+checkSentencePrompt()
 
 print("")
 if failures == 0 {

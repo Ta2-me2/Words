@@ -3,13 +3,18 @@ import FoundationModels
 import Observation
 import WordsCompanion
 
-/// Asking the companion for one short, correct sentence per word.
+/// Asking the companion for one short, correct sentence per word, over a run
+/// of words that have none.
 ///
 /// The sentences are written onto the words themselves, as their examples, so
-/// the work shows up twice: in this game, and on the card during an ordinary
-/// sitting. Nothing is saved until the learner has read it — a model writing
-/// grammar for somebody who cannot yet check it is exactly the case where a
-/// review step is not optional.
+/// the work shows up everywhere a word does: on the card during an ordinary
+/// sitting, and in the dictation game. Nothing is saved until the learner has
+/// read it — a model writing grammar for somebody who cannot yet check it is
+/// exactly the case where a review step is not optional.
+///
+/// One word at a time, in order, and the asking itself is `SentenceWriter`'s:
+/// the prompt, the reading of the answer and the describing of a failure are
+/// the same here as beside a single field in Add Words.
 @Observable
 @MainActor
 final class SentenceMaker {
@@ -75,7 +80,7 @@ final class SentenceMaker {
 
             let session: LanguageModelSession
             do {
-                session = try Self.session(for: profile, companion: companion)
+                session = try SentenceWriter.session(for: profile, companion: companion)
             } catch {
                 self.failure = error.localizedDescription
                 return
@@ -87,11 +92,10 @@ final class SentenceMaker {
                 lines[index].state = .writing
 
                 do {
-                    let made = try await Self.make(
+                    let made = try await SentenceWriter.make(
                         word: lines[index].term,
                         meaning: lines[index].meaning,
-                        with: session,
-                        in: profile
+                        with: session
                     )
                     if Task.isCancelled { return }
                     lines[index].sentence = made.sentence
@@ -100,14 +104,12 @@ final class SentenceMaker {
                 } catch is CancellationError {
                     lines[index].state = .waiting
                     return
-                } catch let error as SentenceError {
-                    lines[index].state = .refused(error.reason)
                 } catch {
-                    lines[index].state = .refused(error.localizedDescription)
+                    lines[index].state = .refused(SentenceWriter.reason(for: error, word: lines[index].term))
                     // One bad answer is a bad answer; a model that has stopped
                     // responding is every answer after it, so it stops here.
                     if lines.count { if case .refused = $0.state { true } else { false } } > 3 {
-                        self.failure = error.localizedDescription
+                        self.failure = SentenceWriter.reason(for: error, word: lines[index].term)
                         return
                     }
                 }
@@ -132,51 +134,19 @@ final class SentenceMaker {
         work = Task { [weak self] in
             guard let self else { return }
             defer { self.isRunning = false }
-            guard let session = try? Self.session(for: profile, companion: companion) else { return }
+            guard let session = try? SentenceWriter.session(for: profile, companion: companion) else { return }
             lines[index].state = .writing
             do {
-                let made = try await Self.make(
+                let made = try await SentenceWriter.make(
                     word: lines[index].term, meaning: lines[index].meaning,
-                    with: session, in: profile
+                    with: session
                 )
                 lines[index].sentence = made.sentence
                 lines[index].translation = made.translation
                 lines[index].state = .done
-            } catch let error as SentenceError {
-                lines[index].state = .refused(error.reason)
             } catch {
-                lines[index].state = .refused(error.localizedDescription)
+                lines[index].state = .refused(SentenceWriter.reason(for: error, word: lines[index].term))
             }
         }
     }
-
-    // MARK: - The model
-
-    private static func session(for profile: LanguageProfile, companion: CompanionModel?) throws -> LanguageModelSession {
-        let instructions = SentencePrompt.instructions(for: profile)
-        if let companion, #available(macOS 27, *) {
-            return LanguageModelSession(
-                model: CompanionStore.languageModel(for: companion),
-                instructions: instructions
-            )
-        }
-        return LanguageModelSession(instructions: instructions)
-    }
-
-    private static func make(
-        word: String,
-        meaning: String,
-        with session: LanguageModelSession,
-        in profile: LanguageProfile
-    ) async throws -> (sentence: String, translation: String) {
-        let response = try await session.respond(to: SentencePrompt.ask(word: word, meaning: meaning))
-        guard let made = SentencePrompt.read(response.content, word: word) else {
-            throw SentenceError(reason: "What came back was not a sentence using the word.")
-        }
-        return made
-    }
-}
-
-nonisolated struct SentenceError: Error {
-    let reason: String
 }

@@ -27,12 +27,13 @@ nonisolated enum SentencePrompt {
         lines.append("- Everyday language a beginner would actually meet. Simple present unless the word asks for something else.")
         lines.append("- Grammatically perfect: articles, agreement, case and word order all correct. This is the whole point — a learner cannot tell a wrong sentence from a right one, and will learn whatever you write. If you are not certain a sentence is correct, write a simpler one you are certain of.")
         lines.append("- Nothing that needs explaining: no names, no idioms, no wordplay.")
+        lines.append("- If the word has several meanings, take the one the learner was given and ignore the rest.")
         lines.append("")
         lines.append("THE TRANSLATION")
         lines.append("- The same sentence in \(native), written naturally rather than word for word.")
         lines.append("")
         lines.append("HOW TO ANSWER")
-        lines.append("Two lines, and nothing else at all — no labels, no quotation marks, no explanation:")
+        lines.append("Two lines, and nothing else at all — no greeting before them, no note after them, no labels, no quotation marks, no explanation:")
         lines.append("<the \(learning) sentence>")
         lines.append("<the \(native) translation>")
         return lines.joined(separator: "\n")
@@ -46,22 +47,90 @@ nonisolated enum SentencePrompt {
     /// Reads what came back, or `nil` if it cannot be used.
     ///
     /// Models answer tidily most of the time and then, every so often, with a
-    /// label, a bullet, a pair of quotation marks or an apology. Those are
-    /// taken off; anything that is still not a sentence using the word is
-    /// refused, because a wrong example is worse than none.
+    /// label, a bullet, a pair of quotation marks, an apology, or a paragraph
+    /// about what they have just written. None of that is refused outright:
+    /// the answer is searched for the line that is actually a sentence using
+    /// the word, and the rest is left where it was. What cannot be found that
+    /// way is refused, because a wrong example is worse than none.
     static func read(_ text: String, word: String) -> (sentence: String, translation: String)? {
         let lines = text
             .components(separatedBy: .newlines)
             .map { tidied($0) }
             .filter { !$0.isEmpty }
 
-        guard let sentence = lines.first else { return nil }
-        let translation = lines.count > 1 ? lines[1] : ""
+        // The first line that is a sentence using the word. A model that
+        // begins with "Sure — here you are:" has still answered, and throwing
+        // the whole answer away over its manners would refuse a good sentence.
+        //
+        // Twice over, because a line that mentions the word is not always the
+        // sentence: a model explaining itself writes "Here is an example with
+        // Haus, which means house" first and the sentence after it. A line
+        // that ends the way a sentence ends is preferred; only if there is no
+        // such line does one that merely reads like a sentence do.
+        for mustEnd in [true, false] {
+            for (index, line) in lines.enumerated() {
+                // Both halves on one line first, which is the other thing that
+                // happens: "Das Haus ist groß. — Дом большой." Read whole, that
+                // line passes for a sentence and the translation is lost
+                // inside it, so the halves are tried before the line.
+                if let halved = halved(line, word: word, mustEnd: mustEnd) { return halved }
+                if isSentence(line, using: word, mustEnd: mustEnd) {
+                    return (line, translation(after: index, in: lines))
+                }
+            }
+        }
 
-        let count = DictationText.words(of: sentence).count
-        guard wordRange.contains(count) else { return nil }
-        guard uses(word, in: sentence) else { return nil }
-        return (sentence, translation)
+        return nil
+    }
+
+    /// A line carrying the sentence and its translation at once, told apart by
+    /// what is between them. A separator only counts with space around it, so
+    /// a hyphenated word and a decimal point are left alone.
+    private static func halved(_ line: String, word: String, mustEnd: Bool) -> (sentence: String, translation: String)? {
+        for separator in [" — ", " – ", " - ", " / ", " | ", " = ", " · "] {
+            let halves = line.components(separatedBy: separator)
+            guard halves.count == 2 else { continue }
+            let sentence = tidied(halves[0])
+            guard isSentence(sentence, using: word, mustEnd: mustEnd) else { continue }
+            return (sentence, usable(tidied(halves[1]), sentence: sentence) ?? "")
+        }
+        return nil
+    }
+
+    /// Whether a line is the sentence that was asked for: the right length,
+    /// really using the word, and not the introduction to one.
+    private static func isSentence(_ line: String, using word: String, mustEnd: Bool) -> Bool {
+        guard !line.hasSuffix(":") else { return false }
+        guard wordRange.contains(DictationText.words(of: line).count) else { return false }
+        guard !mustEnd || ends.contains(line.last ?? " ") else { return false }
+        return uses(word, in: line)
+    }
+
+    /// How a sentence ends, in the scripts a learner might be reading.
+    private static let ends: Set<Character> = [".", "!", "?", "…", "。", "！", "？", "।", "۔", "؟"]
+
+    /// The translation: the next line that is not the sentence over again.
+    private static func translation(after spoken: Int, in lines: [String]) -> String {
+        let sentence = lines[spoken]
+        for line in lines.dropFirst(spoken + 1) {
+            guard let usable = usable(line, sentence: sentence) else { continue }
+            return usable
+        }
+        return ""
+    }
+
+    /// Whether a line can be used as the translation of this sentence.
+    ///
+    /// Not the sentence repeated, and not an essay: a translation of sixteen
+    /// words cannot itself be thirty, and a model that has started explaining
+    /// itself is writing something that does not belong on a card. Rather
+    /// than refuse the sentence over it, the sentence is kept and the
+    /// translation left empty for the learner to fill in.
+    private static func usable(_ line: String, sentence: String) -> String? {
+        let bare = DictationText.compared(line)
+        guard !bare.isEmpty, bare != DictationText.compared(sentence) else { return nil }
+        guard DictationText.words(of: line).count <= wordRange.upperBound + 6 else { return nil }
+        return line
     }
 
     /// One line, with whatever the model put around it taken off.

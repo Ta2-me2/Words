@@ -3,12 +3,21 @@ import WordsCompanion
 
 /// Asking the companion to write an example for every word that has none.
 ///
+/// Opened from the Library, where the words are, and from the dictation game,
+/// which has nothing to play for a word with no sentence. Either way the run
+/// is the same: one word at a time, oldest first, and the sentence goes onto
+/// the word as its example — so it turns up on the card in an ordinary
+/// sitting as well as in the game.
+///
 /// Nothing reaches the library until it has been read. Every line can be
 /// edited or dropped, because the learner is the one who will be taught by it
 /// and the model is the one that cannot be asked whether it was right.
-struct DictationCompanionView: View {
+struct MakeSentencesView: View {
     let profile: LanguageProfile
+    /// The deck to stay inside, or `nil` for the whole language.
     let deckID: UUID?
+    /// Only these words, when the screen that opened this had a selection.
+    var only: Set<UUID>?
 
     @Environment(LibraryStore.self) private var store
     @Environment(AppSettings.self) private var settings
@@ -22,7 +31,9 @@ struct DictationCompanionView: View {
     private var companionName: String { companion?.name ?? "Apple Intelligence" }
 
     private var candidates: [Entry] {
-        DictationMaterial.wordsWithoutExamples(for: profile, in: store.library, deckID: deckID)
+        let waiting = store.library.entriesWithoutExamples(in: profile.id, deckID: deckID)
+        guard let only else { return waiting }
+        return waiting.filter { only.contains($0.id) }
     }
 
     var body: some View {
@@ -46,19 +57,21 @@ struct DictationCompanionView: View {
     private var setup: some View {
         Form {
             Section {
-                LabeledContent("Words with no example yet", value: "\(candidates.count)")
+                LabeledContent(only == nil ? "Words with no example yet" : "Chosen words with no example yet", value: "\(candidates.count)")
                 LabeledContent("Write for") {
                     CountField(value: $limit, in: 1 ... 500)
                 }
             } header: {
                 Text("What there is")
             } footer: {
-                Text("The oldest words first. A sentence is written for each, and goes onto that word as its example — so it turns up in this game and on the card during an ordinary sitting.")
+                Text("The oldest words first. A sentence is written for each, and goes onto that word as its example — so it turns up on the card during an ordinary sitting, and in the dictation game.")
             }
 
             if candidates.isEmpty {
                 Section {
-                    Label("Every word in this language already has an example.", systemImage: "checkmark.circle")
+                    Label(only == nil
+                          ? "Every word here already has an example."
+                          : "Every word you chose already has an example.", systemImage: "checkmark.circle")
                         .foregroundStyle(Palette.complete)
                 }
             }

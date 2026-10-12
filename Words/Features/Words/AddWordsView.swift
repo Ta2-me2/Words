@@ -29,6 +29,11 @@ struct AddWordsView: View {
     /// held here until the word is added, then written to the library with it.
     @State private var drawing: DrawingContent = .none
 
+    /// The companion writing an example for the word in the form. Its own
+    /// object, so a request in flight survives the form being retyped around
+    /// it — and is let go of the moment the word it was for changes.
+    @State private var writer = SentenceWriter()
+
 
     @FocusState private var focus: Field?
 
@@ -58,6 +63,12 @@ struct AddWordsView: View {
             deckID = router.lastDeckID
         }
         .onChange(of: router.addWordsFocus) { focus = .term }
+        .onChange(of: bareTerm) {
+            // A sentence that arrives for a word no longer in the form would
+            // be an example of something else entirely.
+            if writer.isWriting { writer.cancel() }
+            writer.forget()
+        }
         .onChange(of: router.lastDeckID) {
             // Arriving from a deck files into that deck: filling a shelf should
             // not mean choosing it again for every word.
@@ -121,6 +132,33 @@ struct AddWordsView: View {
                 TextField("Note", text: $note, prompt: Text("Optional"), axis: .vertical)
                     .lineLimit(1...3)
                     .focused($focus, equals: .note)
+            } header: {
+                HStack(spacing: 10) {
+                    Text("Example")
+                    Spacer(minLength: 8)
+                    SentenceButton(
+                        profile: profile,
+                        key: bareTerm,
+                        word: bareTerm,
+                        meaning: meaning,
+                        writer: writer,
+                        filled: { sentence, translation in
+                            example = sentence
+                            exampleTranslation = translation
+                        }
+                    )
+                    .textCase(nil)
+                }
+            } footer: {
+                // What the companion wrote is a draft like anything else in
+                // this form: it can be read, corrected, or typed over before
+                // the word is added.
+                if let refusal = writer.refusal(for: bareTerm) {
+                    Label(refusal, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(Palette.warning)
+                } else if !example.isEmpty {
+                    Text("Edit it as you like — it is saved with the word.")
+                }
             }
 
             Section("Drawing") {
@@ -160,6 +198,13 @@ struct AddWordsView: View {
 
     private var marksGender: Bool {
         LanguageGenders.marksGender(profile.learningCode)
+    }
+
+    /// The word without the article typed in front of it. "die Mutter" is how
+    /// a German learner writes a noun, and "die Mutter" is not a word the
+    /// companion can be asked to use in a sentence.
+    private var bareTerm: String {
+        LanguageGenders.split(term: term, language: profile.learningCode).0
     }
 
     /// "die" reads better than "Feminine" on a button a German learner presses
@@ -212,6 +257,9 @@ struct AddWordsView: View {
 
     private func add() {
         guard isComplete else { return }
+        // The form is about to be emptied; anything still being written for it
+        // is for a word that will no longer be in it.
+        writer.cancel()
 
         // "die Mutter" is how a German learner writes a noun; the gender is in
         // what they typed, and asking for it again would be asking twice.

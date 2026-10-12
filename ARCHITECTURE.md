@@ -574,6 +574,51 @@ involved — a model installed for Ollama is in Ollama's own packaging, and aski
 somebody to install a second application to use a feature of this one is the
 thing being avoided.
 
+### Example sentences
+
+A word with an example on it is worth more than a word without one: it is what
+the card shows under the meaning, and it is what the dictation game plays. Most
+libraries have hundreds without. So the companion writes them, in the three
+places where somebody is already looking at a word that has none.
+
+- **One word being typed in.** A button beside the Example field in Add Words.
+  The fields fill in and can be typed over — what the model wrote is a draft
+  like anything else in that form, and it is saved with the word or thrown away
+  with it.
+- **A list being pasted.** The same button in each row of the preview, in the
+  Example column. What comes back is kept beside the plan rather than in it,
+  filed under the word: the list is read again from the text on every keystroke,
+  and a sentence that took the model five seconds must not vanish because a
+  letter was typed three lines below it. The two are put together once, at the
+  moment of import.
+- **Words already in the library.** A run over every word in the language, or in
+  a deck, that has no example — from the Library's toolbar, from a right click
+  on a selection, or from the dictation game. One at a time, oldest first,
+  shown as they arrive. Nothing reaches the library until the learner has read
+  it: a model writing grammar for somebody who cannot yet check it is exactly
+  the case where a review step is not optional.
+
+What all three share is `SentenceWriter` — the session, the options, the asking,
+and how a failure is described in a line that fits beside a field.
+`SentenceMaker` is the run over many words and asks through the same two calls;
+`SentencePrompt` holds what the model is told and what counts as an answer.
+
+The reading is the part worth writing down, because it is what has to survive a
+model going wrong. Models answer tidily most of the time and then, every so
+often, with a label, a bullet, quotation marks, an apology, or a paragraph
+explaining the sentence they have just written. So the answer is searched rather
+than parsed: the first line that is a sentence using the word — length checked,
+word checked by its stem so an inflected form counts — is the sentence, and the
+next line that is not that sentence again is the translation. Lines are tried in
+two passes, those ending the way a sentence ends before the rest, because "Here
+is an example with Haus, which means house:" mentions the word too and is not
+the answer. A sentence and its translation on one line are split on the dash
+between them. A translation that runs to an essay is dropped while the sentence
+is kept; an answer with no sentence in it at all is refused, because a wrong
+example is worse than none. The model is also held to 200 tokens and a low
+temperature: an example sentence is wanted correct, not interesting, and a
+runaway answer on a Mac costs the learner the wait.
+
 ### Dictation
 
 The app's own game, and the one that practises the half of a language the rest
@@ -589,12 +634,9 @@ many words, and what each begins with — and the learner types it back.
 - **Where the companion fits.** Asked to, it writes an example for each word
   that has none — and writes it onto the word, as its example, not into the
   game. The work then counts twice: the sentence is played here, and it is on
-  the card during an ordinary sitting. Nothing is saved until the learner has
-  read it, because a model writing grammar for somebody who cannot yet check it
-  is exactly the case where a review step is not optional. `SentencePrompt`
-  holds both halves — what the model is told, and what counts as an answer: a
-  sentence that does not use the word it was asked for, or that runs past
-  sixteen words, is refused rather than saved.
+  the card during an ordinary sitting. It is the same run the Library offers,
+  described under [Example sentences](#example-sentences) below; the game opens
+  it pointed at its own deck.
 - **The screen.** Laid out like Home — what today asks for, what the game is
   played with, how it has been going, a year of days — and the sitting itself
   is a sheet, like a review. The typing is one field rather than a box per

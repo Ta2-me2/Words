@@ -47,9 +47,14 @@ and a tutor beside the card that can be asked anything in any language.
   lines, Markdown bullets, tabs, a dash where a semicolon should be. There is a
   prompt to hand an AI so the list it writes pastes straight in.
 - **One word at a time**, with everything optional except the word and what it
-  means.
+  means — and a button that has the companion write the example sentence and
+  its translation for you, to read over and correct before the word goes in.
+  The same button sits in every row of a pasted list.
 - **From Words** — a `.wordspack` somebody exported, with its decks, its
   subdecks and its files intact.
+
+A word in the library with no example gets one the same way: the Library writes
+them in a run, oldest first, and nothing is saved until you have read it.
 
 **Getting words out**
 
@@ -83,9 +88,8 @@ Nothing you ask either model leaves the machine.
 
 - **Dictation** — the app's own. A phrase is read aloud and you type it back;
   all you see is its shape, one first letter per word. It plays your words, the
-  examples kept with them, or sentences you write yourself — and the companion
-  will write an example for every word that has none, straight onto the word,
-  so it turns up on the card too. Marked word by word, with a dropped accent
+  examples kept with them, or sentences you write yourself — and a word with no
+  example can be given one by the companion without leaving the game. Marked word by word, with a dropped accent
   told apart from a word got wrong, and a day's goal of its own.
 - **WordFall** — a RealityKit vocabulary game, fed from your own decks.
 
@@ -151,7 +155,7 @@ Scripts/make-dmg.sh
 Tests/run.sh
 ```
 
-1089 checks over the scheduler, the queue, the day's allowance, decks and
+1126 checks over the scheduler, the queue, the day's allowance, decks and
 subdecks, the import formats, the Anki reader, the streak, the store and what the
 companion is told — compiled as a command-line binary, so they run in a couple of
 seconds and need no window.

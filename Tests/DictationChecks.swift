@@ -139,7 +139,7 @@ func checkDictation() {
     check("but not the sentences of one's own", items.contains { $0.source == .written })
 
     check("words with nothing to say about them are what the companion is for",
-          DictationMaterial.wordsWithoutExamples(for: german, in: library, deckID: nil).map(\.term) == ["Brot"])
+          library.entriesWithoutExamples(in: german.id).map(\.term) == ["Brot"])
 
     section("The day")
 

@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import WordsCompanion
 
 /// Every word in the language, or in one deck of it.
 ///
@@ -13,6 +14,7 @@ struct LibraryView: View {
     @Environment(LibraryStore.self) private var store
     @Environment(Router.self) private var router
     @Environment(AppClock.self) private var clock
+    @Environment(AppSettings.self) private var settings
     private let speaker = Speaker.shared
 
     @State private var selection: Set<UUID> = []
@@ -22,6 +24,17 @@ struct LibraryView: View {
     @State private var drawingFor: Entry?
 
     @State private var sort = WordSort()
+
+    /// The words the companion has been asked to write examples for, while it
+    /// is being asked. A sheet, like drawing: a run with an end, over the list
+    /// it is filling in.
+    @State private var writingFor: SentenceScope?
+
+    /// Which words a run is over: everything in view, or what was selected.
+    private struct SentenceScope: Identifiable {
+        let id = UUID()
+        let only: Set<UUID>?
+    }
 
     var body: some View {
         @Bindable var router = router
@@ -43,6 +56,14 @@ struct LibraryView: View {
                     .disabled(counts.total == 0 && practiceCount == 0)
                 }
 
+                ToolbarItem(id: "library.examples") {
+                    Button("Write Examples", systemImage: "sparkles") {
+                        writingFor = SentenceScope(only: nil)
+                    }
+                    .help(examplesHelp)
+                    .disabled(missingExamples == 0 || companionProblem != nil)
+                }
+
                 ToolbarItem(id: "library.deck") {
                     Button("New Deck", systemImage: "rectangle.stack.badge.plus") { router.newDeck() }
                         .help("Make a deck in this language")
@@ -55,6 +76,33 @@ struct LibraryView: View {
             }
             .onChange(of: profile.id) { reset() }
             .onChange(of: deck?.id) { reset() }
+            .sheet(item: $writingFor) { scope in
+                MakeSentencesView(profile: profile, deckID: deck?.id, only: scope.only)
+            }
+    }
+
+    // MARK: - Examples
+
+    /// How many words in view have no example sentence yet — the count the
+    /// companion would be asked to fill in.
+    private var missingExamples: Int {
+        store.library.entriesWithoutExamples(in: profile.id, deckID: deck?.id).count
+    }
+
+    private var companionProblem: String? {
+        SentenceWriter.problem(with: CompanionModel.named(settings.companionID))
+    }
+
+    private var examplesHelp: String {
+        if let problem = companionProblem { return problem }
+        let missing = missingExamples
+        guard missing > 0 else {
+            return deck == nil
+                ? "Every word in this language already has an example."
+                : "Every word in this deck already has an example."
+        }
+        let name = CompanionModel.named(settings.companionID)?.name ?? "Apple Intelligence"
+        return "\(name) writes an example and its translation for the \(missing) \(missing == 1 ? "word" : "words") here that have none"
     }
 
     private func reset() {
@@ -221,6 +269,18 @@ struct LibraryView: View {
         let move = NSMenuItem(title: "Move to Deck", action: nil, keyEquivalent: "")
         move.submenu = decks
         items.append(move)
+
+        // The same question the toolbar asks, of these words only.
+        let waiting = Set(store.library.entriesWithoutExamples(in: profile.id, deckID: deck?.id).map(\.id))
+        let withoutExamples = ids.intersection(waiting)
+        if !withoutExamples.isEmpty, companionProblem == nil {
+            items.append(.separator())
+            items.append(NSMenuItem.running(
+                withoutExamples.count == 1 ? "Write an Example…" : "Write Examples for \(withoutExamples.count) Words…"
+            ) {
+                writingFor = SentenceScope(only: withoutExamples)
+            })
+        }
 
         items.append(.separator())
 
