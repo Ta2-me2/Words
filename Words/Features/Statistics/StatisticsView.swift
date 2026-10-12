@@ -31,6 +31,7 @@ struct StatisticsView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: Metrics.sectionSpacing) {
                         vocabulary
+                        RememberingSection(profile: profile)
                         reviewsPerDay
                         forecast
                         answers
@@ -85,7 +86,7 @@ struct StatisticsView: View {
                 )
                 LabelledValue(
                     value: summary.accuracy.map { "\(Int(($0 * 100).rounded()))%" } ?? "—",
-                    label: "Remembered"
+                    label: "Answered right"
                 )
                 Spacer(minLength: 0)
             }

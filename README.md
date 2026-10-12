@@ -23,6 +23,9 @@ and a tutor beside the card that can be asked anything in any language.
 - Practice that reschedules nothing, over today's cards or endlessly.
 - A streak that understands a life: freezes, and a week that only asks for the
   days you set.
+- A check on the schedule itself: the share of words you meant to remember
+  against the share that actually came back, by how long each had waited. If the
+  two disagree, one setting puts it right.
 
 **The words themselves**
 
@@ -155,7 +158,7 @@ Scripts/make-dmg.sh
 Tests/run.sh
 ```
 
-1126 checks over the scheduler, the queue, the day's allowance, decks and
+1160 checks over the scheduler, the queue, the day's allowance, decks and
 subdecks, the import formats, the Anki reader, the streak, the store and what the
 companion is told — compiled as a command-line binary, so they run in a couple of
 seconds and need no window.

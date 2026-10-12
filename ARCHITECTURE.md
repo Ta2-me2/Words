@@ -327,6 +327,22 @@ being forgotten, the forecast, the accuracy. Pure functions over the model, so
 no view counts anything for itself and every number on screen can be checked
 without a window.
 
+`TrueRetention` answers the one question the rest of the app takes on trust:
+whether the schedule keeps its promise. The learner asks for a share of words to
+still be there when they come round — nine in ten by default — and this counts
+the share that was. Anki shows the same figure under the name true retention,
+and the word that matters in it is *true*: only a scheduled review of a card
+that had been waiting on an interval is counted. A learning step answered three
+minutes after the last one is not a memory being tested, practice is chosen
+rather than asked for, and counting either would quietly turn a hard month into
+a good one. The screen cuts it three ways — the last month against the goal, by
+how long the word had waited, and over time with young cards and known ones
+apart — because a figure that is fine on three days and poor on three months is
+not a memory problem but a scheduling one, and the two want different answers.
+It also measures the app's own rule rather than FSRS's: the words answered Easy
+on sight, set aside for a month on that alone, counted separately so that the
+rule can be judged.
+
 `StudySnapshot` is a sitting that was left: the cards still in front of it, the
 ones already done, the count it started with, and the day it belongs to. At most
 one per language, deck and mode; writing a new one throws away everything that
@@ -806,9 +822,17 @@ and photographs, a photo and a drawing that may not share a word,
 what an endless sitting shows next and how often — that the words being lost
 come round several times more than the ones that are known, that no word is
 shown twice running, and that the whole library is reached,
-every statistic on the Home and Statistics screens,
+every statistic on the Home and Statistics screens, what counts as remembering
+and what is left out of it — practice, a word being met, a learning step, a word
+being got back, another language's answers — where the line between a young card
+and a known one falls and how long a word waited before it was asked,
 editing and deleting, the JSON round trip, a file that has been got at, and
 closing and opening the app again.
+
+A screen that only fills in after months of reviews can be looked at today:
+`WORDS_DATA_FOLDER` points a build at another folder, so a library made up for
+the occasion can be opened without going anywhere near the one somebody is
+learning from.
 
 ## Not here yet
 
@@ -825,7 +849,10 @@ has. The
 FSRS optimiser is the notable one: until it exists the published weights are
 used for everybody, which is what FSRS recommends until a learner has several
 hundred reviews behind them, and fitting them properly needs a numerical
-optimiser rather than another page of arithmetic.
+optimiser rather than another page of arithmetic. What exists now is the screen
+that says whether it is needed — if what was promised and what came back agree,
+there is nothing to optimise — and the history it would be fitted to, which has
+been kept since the first day.
 
 Gender rules exist for German only, deliberately: the list of languages is going
 to change, and rules written for languages nobody is learning are rules nobody
