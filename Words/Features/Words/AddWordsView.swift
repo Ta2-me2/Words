@@ -1,43 +1,21 @@
 import SwiftUI
 
-/// Where words are added: one at a time, or a list at once.
+/// Where words are added: one at a time, a list at once, or a deck somebody
+/// else made.
 ///
 /// Its own screen rather than a sheet, because adding vocabulary is the thing a
-/// learner does most often and it is where the app will grow first. The single
-/// form keeps the cursor and clears itself, so twenty words are twenty typings
-/// and nothing else.
+/// learner does most often and it is where the app will grow first. The screen
+/// itself is only the four sides and what they share — which deck everything
+/// lands in — and each side is its own view.
 struct AddWordsView: View {
     let profile: LanguageProfile
 
-    @Environment(LibraryStore.self) private var store
     @Environment(Router.self) private var router
 
-    @State private var term = ""
-    @State private var meaning = ""
-    @State private var gender: Gender?
-    @State private var transcription = ""
-    @State private var example = ""
-    @State private var exampleTranslation = ""
-    @State private var note = ""
+    /// Which deck a word lands in, whichever way it is being added. Shared
+    /// between the sides, because filling a shelf should not mean choosing it
+    /// again for every way of filling it.
     @State private var deckID: UUID?
-
-    /// What this sitting has put in, newest first. Kept as identifiers so the
-    /// rows follow any later edit.
-    @State private var added: [UUID] = []
-
-    /// A drawing or a photo chosen before the word it belongs to exists. It is
-    /// held here until the word is added, then written to the library with it.
-    @State private var drawing: DrawingContent = .none
-
-    /// The companion writing an example for the word in the form. Its own
-    /// object, so a request in flight survives the form being retyped around
-    /// it — and is let go of the moment the word it was for changes.
-    @State private var writer = SentenceWriter()
-
-
-    @FocusState private var focus: Field?
-
-    private enum Field { case term, meaning, transcription, example, exampleTranslation, note }
 
     var body: some View {
         // The mode is read inside the switch and the picker, never here. The
@@ -46,7 +24,7 @@ struct AddWordsView: View {
         // again the very control that had been clicked, halfway through its
         // animation.
         AddModeSwitch(
-            oneWord: single,
+            oneWord: WordCardEditor(profile: profile, deckID: $deckID),
             list: ImportWordsView(profile: profile, deckID: $deckID),
             anki: AnkiImportView(profile: profile),
             package: ImportPackageView()
@@ -59,15 +37,7 @@ struct AddWordsView: View {
             }
         }
         .task {
-            focus = .term
             deckID = router.lastDeckID
-        }
-        .onChange(of: router.addWordsFocus) { focus = .term }
-        .onChange(of: bareTerm) {
-            // A sentence that arrives for a word no longer in the form would
-            // be an example of something else entirely.
-            if writer.isWriting { writer.cancel() }
-            writer.forget()
         }
         .onChange(of: router.lastDeckID) {
             // Arriving from a deck files into that deck: filling a shelf should
@@ -75,231 +45,9 @@ struct AddWordsView: View {
             deckID = router.lastDeckID
         }
     }
-
-    // MARK: - One word
-
-    private var single: some View {
-        Form {
-            Section {
-                TextField(LanguageCatalog.name(for: profile.learningCode), text: $term, prompt: Text("Word"))
-                    .focused($focus, equals: .term)
-                    .onSubmit { focus = .meaning }
-
-                TextField(LanguageCatalog.name(for: profile.nativeCode), text: $meaning, prompt: Text("Meaning"))
-                    .focused($focus, equals: .meaning)
-                    .onSubmit { add() }
-
-                TextField("Said", text: $transcription, prompt: Text("Optional"))
-                    .focused($focus, equals: .transcription)
-                    .onSubmit { add() }
-
-                if marksGender {
-                    Picker("Gender", selection: $gender) {
-                        Text("—").tag(Gender?.none)
-                        ForEach(Gender.allCases) { gender in
-                            Text(articleLabel(for: gender)).tag(Optional(gender))
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-
-                if !decks.isEmpty {
-                    Picker("Deck", selection: $deckID) {
-                        Text("None").tag(UUID?.none)
-                        Divider()
-                        ForEach(decks) { deck in
-                            Text(store.library.path(of: deck)).tag(Optional(deck.id))
-                        }
-                    }
-                }
-            } header: {
-                Text("New Word")
-            } footer: {
-                Text(marksGender
-                     ? "Type the article with the word — “die Mutter” — and the gender is filed for you."
-                     : "The word as you want to be asked it, and what it means in \(LanguageCatalog.name(for: profile.nativeCode)).")
-            }
-
-            Section {
-                TextField("Example", text: $example, prompt: Text("Optional"), axis: .vertical)
-                    .lineLimit(1...3)
-                    .focused($focus, equals: .example)
-
-                TextField("Translation", text: $exampleTranslation, prompt: Text("Optional"), axis: .vertical)
-                    .lineLimit(1...3)
-                    .focused($focus, equals: .exampleTranslation)
-
-                TextField("Note", text: $note, prompt: Text("Optional"), axis: .vertical)
-                    .lineLimit(1...3)
-                    .focused($focus, equals: .note)
-            } header: {
-                HStack(spacing: 10) {
-                    Text("Example")
-                    Spacer(minLength: 8)
-                    SentenceButton(
-                        profile: profile,
-                        key: bareTerm,
-                        word: bareTerm,
-                        meaning: meaning,
-                        writer: writer,
-                        filled: { sentence, translation in
-                            example = sentence
-                            exampleTranslation = translation
-                        }
-                    )
-                    .textCase(nil)
-                }
-            } footer: {
-                // What the companion wrote is a draft like anything else in
-                // this form: it can be read, corrected, or typed over before
-                // the word is added.
-                if let refusal = writer.refusal(for: bareTerm) {
-                    Label(refusal, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(Palette.warning)
-                } else if !example.isEmpty {
-                    Text("Edit it as you like — it is saved with the word.")
-                }
-            }
-
-            Section("Drawing") {
-                AssociationEditor(
-                    term: term,
-                    meaning: meaning,
-                    load: { drawing },
-                    save: { drawing = $0 }
-                )
-                // A fresh row for each word added, so the drawing that has just
-                // gone into the library does not linger on the next word.
-                .id(added.count)
-                .padding(.vertical, 2)
-            }
-
-            Section {
-                Button("Add Word") { add() }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity)
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(!isComplete)
-            }
-
-            if !recent.isEmpty {
-                Section("Added Just Now") {
-                    ForEach(recent) { entry in
-                        row(for: entry)
-                    }
-                }
-            }
-        }
-        .formStyle(.grouped)
-        .frame(maxWidth: Metrics.readableWidth + 120)
-        .frame(maxWidth: .infinity)
-    }
-
-    private var marksGender: Bool {
-        LanguageGenders.marksGender(profile.learningCode)
-    }
-
-    /// The word without the article typed in front of it. "die Mutter" is how
-    /// a German learner writes a noun, and "die Mutter" is not a word the
-    /// companion can be asked to use in a sentence.
-    private var bareTerm: String {
-        LanguageGenders.split(term: term, language: profile.learningCode).0
-    }
-
-    /// "die" reads better than "Feminine" on a button a German learner presses
-    /// twenty times a day.
-    private func articleLabel(for gender: Gender) -> String {
-        LanguageGenders.article(gender, language: profile.learningCode) ?? gender.short
-    }
-
-    private var decks: [Deck] {
-        store.library.decks(in: profile.id)
-    }
-
-    private var recent: [Entry] {
-        added.compactMap { store.library.entry(id: $0) }
-    }
-
-    private var isComplete: Bool {
-        !term.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && !meaning.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    private func row(for entry: Entry) -> some View {
-        HStack(spacing: 12) {
-            Text(entry.displayTerm(in: profile))
-                .font(.body.weight(.medium))
-                .lineLimit(1)
-
-            Text(entry.meaning)
-                .foregroundStyle(Palette.secondaryText)
-                .lineLimit(1)
-
-            Spacer(minLength: 8)
-
-            Button("Edit", systemImage: "pencil") { router.editWord(entry.id) }
-                .buttonStyle(.borderless)
-                .labelStyle(.iconOnly)
-                .foregroundStyle(Palette.secondaryText)
-                .help("Edit this word")
-
-            Button("Delete", systemImage: "trash") {
-                store.deleteEntries(ids: [entry.id])
-                added.removeAll { $0 == entry.id }
-            }
-            .buttonStyle(.borderless)
-            .labelStyle(.iconOnly)
-            .foregroundStyle(Palette.secondaryText)
-            .help("Delete this word")
-        }
-    }
-
-    private func add() {
-        guard isComplete else { return }
-        // The form is about to be emptied; anything still being written for it
-        // is for a word that will no longer be in it.
-        writer.cancel()
-
-        // "die Mutter" is how a German learner writes a noun; the gender is in
-        // what they typed, and asking for it again would be asking twice.
-        let (bare, typed) = LanguageGenders.split(term: term, language: profile.learningCode)
-
-        guard let entry = store.addEntry(
-            profileID: profile.id,
-            deckID: deckID,
-            term: bare,
-            meaning: meaning,
-            gender: gender ?? typed,
-            transcription: transcription,
-            example: example,
-            exampleTranslation: exampleTranslation,
-            note: note
-        ) else { return }
-
-        switch drawing {
-        case .none:
-            break
-        case .drawing(let data, let strokes):
-            Task { await store.attachAssociation(data, strokeCount: strokes, to: entry.id) }
-        case .photo(let data, let fileExtension):
-            Task { await store.attachPicture(data, fileExtension: fileExtension, to: entry.id) }
-        }
-
-        added.insert(entry.id, at: 0)
-        term = ""
-        meaning = ""
-        gender = nil
-        transcription = ""
-        example = ""
-        exampleTranslation = ""
-        note = ""
-        drawing = .none
-        focus = .term
-    }
 }
 
-/// The three sides of the screen, with the one the mode asks for in front.
+/// The four sides of the screen, with the one the mode asks for in front.
 ///
 /// The sides are kept, not rebuilt, once they have been made. Making one is a
 /// whole form or a list editor laid out from nothing, a few frames of work on
@@ -385,7 +133,7 @@ private struct AddModePicker: View {
         // The default mode is the one the run loop returns to once the
         // control's tracking is over; nothing queued for it runs while the
         // click is still being handled.
-        nonisolated(unsafe) let router = router
+        let router = router
         RunLoop.main.perform(inModes: [.default]) {
             MainActor.assumeIsolated { router.addMode = mode }
         }
