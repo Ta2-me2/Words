@@ -108,7 +108,7 @@ nonisolated enum WordImport {
             if let candidate = rest.first {
                 if candidate.isEmpty {
                     if LanguageGenders.marksGender(language) { rest.removeFirst() }
-                } else if let gender = Gender.parse(candidate) {
+                } else if let gender = Gender.parse(candidate, language: language) {
                     word.gender = gender
                     rest.removeFirst()
                 }

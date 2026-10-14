@@ -288,8 +288,9 @@ final class WordCell: NSTableCellView {
             primary.font = .systemFont(ofSize: NSFont.systemFontSize, weight: .medium)
             let stack = NSStackView(views: [secondary, primary])
             stack.orientation = .horizontal
-            stack.spacing = 4
+            stack.spacing = Self.markGap
             stack.translatesAutoresizingMaskIntoConstraints = false
+            wordStack = stack
             addSubview(stack)
             pin(stack)
 
@@ -346,6 +347,11 @@ final class WordCell: NSTableCellView {
         fatalError("Not built from an archive.")
     }
 
+    /// Held so the gap between the mark and the word can change per row.
+    private var wordStack: NSStackView?
+
+    private static let markGap: CGFloat = 4
+
     private func pin(_ view: NSView) {
         NSLayoutConstraint.activate([
             view.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -357,10 +363,13 @@ final class WordCell: NSTableCellView {
     func show(_ row: WordRow, isSpeaking: Bool) {
         switch column {
         case .word:
-            secondary.stringValue = row.article
-            secondary.isHidden = row.article.isEmpty
+            secondary.stringValue = row.mark
+            secondary.isHidden = row.mark.isEmpty
+            // An elided article is part of the word it stands in front of, so
+            // the gap between the two labels closes: "l'eau", not "l' eau".
+            wordStack?.spacing = row.markJoins ? 0 : Self.markGap
             primary.stringValue = row.term
-            toolTip = row.article.isEmpty ? row.term : "\(row.article) \(row.term)"
+            toolTip = row.markedTerm
 
         case .meaning:
             primary.stringValue = row.meaning

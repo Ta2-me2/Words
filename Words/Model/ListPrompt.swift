@@ -22,7 +22,12 @@ nonisolated enum ListPrompt {
     static func standard(learning: String, native: String) -> String {
         let word = LanguageCatalog.englishName(for: learning)
         let meaning = LanguageCatalog.englishName(for: native)
-        let gendered = LanguageGenders.marksGender(learning)
+        let genders = LanguageGenders.genders(for: learning)
+        let gendered = !genders.isEmpty
+        // Whether the language's gender is a word in front of the noun or
+        // only a note about it, which decides whether there is an article to
+        // tell the model not to write.
+        let hasArticles = genders.first.flatMap { LanguageGenders.mark($0, language: learning) }?.isSpoken == true
 
         var lines: [String] = []
         lines.append("Whenever I ask you for vocabulary, write it in the format below and nothing else. A flashcard app reads it line by line, so the format has to be followed exactly.")
@@ -35,16 +40,22 @@ nonisolated enum ListPrompt {
             : "word;meaning;[transcription];example;example translation;note")
         lines.append("")
         lines.append("FIELDS")
-        lines.append(gendered
+        lines.append(hasArticles
             ? "- word: the \(word) word, written the way a dictionary lists it. Write nouns without their article."
             : "- word: the \(word) word or phrase, written the way a dictionary lists it.")
         lines.append("- meaning: what it means in \(meaning). If it has several meanings, put them all in this one field, separated by commas.")
         if gendered {
-            let articles = Gender.allCases.compactMap { gender -> String? in
-                guard let article = LanguageGenders.article(gender, language: learning) else { return nil }
-                return "\(gender.short) for \(gender.title.lowercased()) (\(article))"
+            // The genders this language has, each named by what it is called
+            // and shown by what the language writes for it. A language with no
+            // article still gets the second half — "m (муж.)" — because the
+            // model is being told which letters are allowed in the column.
+            let described = genders.map { gender -> String in
+                guard let mark = LanguageGenders.mark(gender, language: learning) else {
+                    return "\(gender.short) for \(gender.title.lowercased())"
+                }
+                return "\(gender.short) for \(gender.title.lowercased()) (\(mark.text))"
             }
-            lines.append("- gender: for nouns only — \(articles.joined(separator: ", ")). Leave it empty for every other kind of word.")
+            lines.append("- gender: for nouns only — \(described.joined(separator: ", ")). Leave it empty for every other kind of word.")
         }
         lines.append("- transcription: how the word is said, written inside square brackets — IPA, or the sounds spelled out in the \(meaning) alphabet. The brackets are what marks the field, so it can never be mistaken for an example. Optional.")
         lines.append("- example: a short, natural \(word) sentence that uses the word. Optional.")

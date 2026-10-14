@@ -116,11 +116,20 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegat
     }
 
     /// Every voice installed for a language, best quality first.
+    /// The voices that can read a language.
+    ///
+    /// A language the learner invented has no code the system knows, so there
+    /// is nothing to filter by and every installed voice is offered instead of
+    /// none: somebody adding Serbian would rather pick the Croatian voice than
+    /// lose every listen button and the dictation game with them.
     static func voices(for languageCode: String) -> [AVSpeechSynthesisVoice] {
         if let cached = byLanguage[languageCode] { return cached }
 
         let list = allVoices()
-            .filter { $0.language == languageCode || $0.language.hasPrefix("\(languageCode)-") }
+            .filter { voice in
+                guard !CustomLanguage.isCustom(languageCode) else { return true }
+                return voice.language == languageCode || voice.language.hasPrefix("\(languageCode)-")
+            }
             .sorted {
                 if $0.quality.rawValue != $1.quality.rawValue {
                     return $0.quality.rawValue > $1.quality.rawValue

@@ -147,17 +147,36 @@ nonisolated struct Entry: Identifiable, Codable, Hashable, Sendable {
         cards.first { $0.id == id }
     }
 
-    /// The word as it should be read: with its article, where the language has
-    /// one. What is stored stays the bare word, so sorting and searching are
-    /// not thrown by a hundred entries beginning with "die".
-    func displayTerm(in profile: LanguageProfile) -> String {
-        guard let article = articlePrefix(in: profile) else { return term }
-        return "\(article) \(term)"
+    /// What the language shows beside this word to say what gender it is: an
+    /// article the word is said with, a short label it is only shown with, or
+    /// nothing at all.
+    ///
+    /// Asked with the word rather than with the gender alone, because French
+    /// and Italian change the article to fit what follows it.
+    func genderMark(in profile: LanguageProfile) -> GenderMark? {
+        guard let gender else { return nil }
+        return LanguageGenders.mark(gender, before: term, language: profile.learningCode)
     }
 
+    /// The word as it should be read: with its article, where the language has
+    /// one that is said out loud. What is stored stays the bare word, so
+    /// sorting and searching are not thrown by a hundred entries beginning
+    /// with "die".
+    ///
+    /// A gender that is shown rather than said — Russian "жен." — is not in
+    /// here, and that is the whole reason the mark knows which it is. Every
+    /// caller of this reads the result aloud, dictates it or puts it in a
+    /// game, and none of them should be saying a dictionary's abbreviation.
+    func displayTerm(in profile: LanguageProfile) -> String {
+        guard let mark = genderMark(in: profile), mark.isSpoken else { return term }
+        return mark.phrase(with: term)
+    }
+
+    /// The article alone, for the places that draw it in its own style beside
+    /// the word. `nil` where the language has no article to say.
     func articlePrefix(in profile: LanguageProfile) -> String? {
-        guard let gender else { return nil }
-        return LanguageGenders.article(gender, language: profile.learningCode)
+        guard let mark = genderMark(in: profile), mark.isSpoken else { return nil }
+        return mark.text
     }
 
     /// Everything a search should look through.

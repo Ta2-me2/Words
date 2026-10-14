@@ -31,13 +31,38 @@ struct LanguageEditor: View {
     @State private var hasEditedName: Bool
 
     @State private var isConfirmingDeletion = false
+    @State private var isManagingLanguages = false
 
     @State private var voiceIdentifier: String?
     @State private var speechRate: Double
     @State private var speaksOnReveal: Bool
     @State private var speaksExampleOnReveal: Bool
 
-    private let codes = LanguageCatalog.sortedCodes
+    /// The languages the app knows, plus whatever this profile is already set
+    /// to.
+    ///
+    /// Computed rather than captured at init, because a language can be added
+    /// while this sheet is open — and because a profile written when the list
+    /// was different keeps working: a code the app has since stopped offering
+    /// is still shown under its own name instead of leaving an empty row.
+    private var knownCodes: [String] {
+        var codes = LanguageCatalog.codes
+        for code in [learningCode, nativeCode]
+        where !codes.contains(code) && !CustomLanguage.isCustom(code) {
+            codes.append(code)
+        }
+        return codes.sorted {
+            LanguageCatalog.name(for: $0).localizedStandardCompare(LanguageCatalog.name(for: $1)) == .orderedAscending
+        }
+    }
+
+    /// Read from the library rather than the catalogue so that adding a
+    /// language redraws the picker it has to appear in.
+    private var customCodes: [String] {
+        store.library.customLanguages
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            .map(\.id)
+    }
 
     init(mode: Mode) {
         self.mode = mode
@@ -87,8 +112,15 @@ struct LanguageEditor: View {
                         .onChange(of: name) { hasEditedName = true }
 
                     Picker("Learning", selection: $learningCode) {
-                        ForEach(codes, id: \.self) { code in
+                        ForEach(knownCodes, id: \.self) { code in
                             Text(LanguageCatalog.name(for: code)).tag(code)
+                        }
+                        if !customCodes.isEmpty {
+                            Section("Your Languages") {
+                                ForEach(customCodes, id: \.self) { code in
+                                    Text(LanguageCatalog.name(for: code)).tag(code)
+                                }
+                            }
                         }
                     }
                     .onChange(of: learningCode) {
@@ -106,13 +138,33 @@ struct LanguageEditor: View {
                     }
 
                     Picker("Meanings in", selection: $nativeCode) {
-                        ForEach(codes, id: \.self) { code in
+                        ForEach(knownCodes, id: \.self) { code in
                             Text(LanguageCatalog.name(for: code)).tag(code)
+                        }
+                        if !customCodes.isEmpty {
+                            Section("Your Languages") {
+                                ForEach(customCodes, id: \.self) { code in
+                                    Text(LanguageCatalog.name(for: code)).tag(code)
+                                }
+                            }
                         }
                     }
                     LabeledContent("Flag") {
-                        FlagPicker(code: learningCode, selection: $flag)
+                        // A language the app knows has flags worth suggesting;
+                        // one somebody added has whatever they chose, so the
+                        // field is open.
+                        if CustomLanguage.isCustom(learningCode) {
+                            HStack(spacing: 0) {
+                                FlagField(flag: $flag)
+                                Spacer(minLength: 0)
+                            }
+                        } else {
+                            FlagPicker(code: learningCode, selection: $flag)
+                        }
                     }
+
+                    Button("Your Languages…") { isManagingLanguages = true }
+                        .help("Add a language the app does not know")
                 } footer: {
                     if learningCode == nativeCode {
                         Text("Choose two different languages.")
@@ -192,6 +244,9 @@ struct LanguageEditor: View {
             // The list of voices is worth asking the system for again here: a
             // learner may have installed one a minute ago.
             Speaker.refreshVoices()
+        }
+        .sheet(isPresented: $isManagingLanguages) {
+            CustomLanguagesView()
         }
         .alert("Delete this language?", isPresented: $isConfirmingDeletion) {
             Button("Delete", role: .destructive) { delete() }

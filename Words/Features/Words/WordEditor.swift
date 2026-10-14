@@ -53,8 +53,8 @@ struct WordEditor: View {
                     if LanguageGenders.marksGender(profile.learningCode) {
                         Picker("Gender", selection: $gender) {
                             Text("—").tag(Gender?.none)
-                            ForEach(Gender.allCases) { gender in
-                                Text(LanguageGenders.article(gender, language: profile.learningCode) ?? gender.short)
+                            ForEach(LanguageGenders.genders(for: profile.learningCode), id: \.self) { gender in
+                                Text(LanguageGenders.mark(gender, language: profile.learningCode)?.text ?? gender.short)
                                     .tag(Optional(gender))
                             }
                         }

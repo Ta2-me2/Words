@@ -49,13 +49,50 @@ of it, is how a learner comes to believe the other half does not exist.
 
 ## Three things worth knowing
 
-**Gender is a fact about the word, not an article.** A word carries `f`, `m` or
-`n`; which article that becomes belongs to the language, so the same word in two
-languages takes two. German is written; the rest say "no rules here yet" rather
-than guessing. A learner never has to reach for the gender control: typing
-"die Mutter" files the word as *Mutter*, feminine, and the words written that
-way before the field existed were lifted the same way when the file was
-upgraded to format 2.
+**Gender is a fact about the word, not an article.** A word carries `f`, `m`,
+`n` or `c`; what the language *shows* for that gender belongs to the language,
+so the same word in two languages is marked two different ways. There are two
+kinds of mark and the difference is not cosmetic — it decides what the voice
+reads. German puts a word in front of the noun and you say it: *die Mutter*,
+both words. Russian puts nothing in front of anything; its gender is a note a
+dictionary prints beside the entry — *жен.* — and reading that aloud would be
+reading out a footnote. `GenderMark` is that distinction, and everything
+downstream asks it rather than guessing from the language code: speech takes
+only the marks that are spoken, the card shows both, in one place.
+
+A language is given articles only when its articles tell its genders *apart*.
+Romanian has free indefinite articles and is written with labels anyway,
+because *un* is both its masculine and its neuter — a mark that cannot answer
+the question it is asked is not a mark. The Scandinavian three print the
+*indefinite* article, because their definite one is a suffix on the word
+(*bil* → *bilen*) and a preposed *den* would be wrong. French and Italian ask
+the word as well as the gender, since the article elides in front of it:
+*l'eau*, *lo studente*. Nineteen of the thirty-one languages have rules;
+twelve mark no gender at all, which is the honest answer for Turkish or
+Japanese rather than a gap.
+
+A learner never has to reach for the gender control: typing "die Mutter" files
+the word as *Mutter*, feminine, and the words written that way before the field
+existed were lifted the same way when the file was upgraded to format 2 —
+and again at format 4, for the eighteen languages that had no rules the first
+time round. A typed article is read as the *citation form* it is, which is what
+the word field asks for; German *der* is also a feminine dative and Dutch *de*
+is the plural of every noun, so somebody filing a declined form gets the gender
+of the headword they did not type, and the picker beside the field is how they
+put it right. The articles that prove nothing are stripped without a guess:
+German *ein* is masculine and neuter both, Norwegian *en* is legal in front of
+a feminine, French *l'* is either gender.
+
+**Languages the learner added.** `CustomLanguage` is a name and a flag under a
+private-use code, kept in the library document so it travels with an export.
+It carries nothing else, because inventing the grammar of a language the app
+has never seen is the one thing it must not do: a custom language behaves
+exactly like the twelve shipped ones that mark no gender. Its name is asked
+for from everywhere — a card's header, a profile's subtitle, the text handed
+to the model — so the catalogue holds a registered mirror of what the library
+has, written at the two points where the library changes. It cannot be deleted
+while a profile is studying it, and because it has no code the system knows,
+every installed voice is offered for it rather than none.
 
 **Practice changes nothing.** Going over today's cards again, or an endless
 shuffle of a deck, moves no schedule and starts no new word — but it is written
@@ -827,8 +864,11 @@ vocabulary table, an Anki article kept in a field of its own and recordings
 told apart by their names, the
 prompt handed to an AI and the lists written the way it says, new words in
 random order that hold for a day, cards turned around and mixed, a word known
-before it was ever studied, the streak and its freezes, genders
-and the articles they become, the three kinds of sitting and the promise that
+before it was ever studied, the streak and its freezes, what each of the
+thirty-one languages does with gender — every mark, the shape an article takes
+in front of a word, the articles that prove nothing, the invariants a new row
+has to satisfy, a language somebody added and a library written before
+Norwegian moved to the code its voices are under — the three kinds of sitting and the promise that
 two of them change nothing, a daily limit on reviews and what it may never hold back, the extra a learner asks for once the day is done and the promise that it is gone tomorrow, a sitting stopped half-way and picked up again the
 same day, the arithmetic of the memory model and everything it is not allowed to
 do — a stability of nought, an interval that shrinks, a Hard longer than a Good,

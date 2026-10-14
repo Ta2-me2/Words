@@ -15,10 +15,18 @@ nonisolated struct WordRow: Identifiable, Hashable {
     /// unfiled words together instead of scattering them.
     let deckName: String
 
-    /// The article the word takes, where its language has one. Shown beside the
-    /// word but never sorted on: a hundred words filed under "die" would be a
-    /// dictionary nobody could use.
-    let article: String
+    /// What the word's language shows for its gender, where it shows
+    /// anything: an article for German, a short label for Russian. Drawn
+    /// beside the term and never sorted on.
+    let mark: String
+
+    /// The term with its mark in front, for the tooltip. Built here because
+    /// an elided article joins its word with no space between them.
+    let markedTerm: String
+
+    /// Whether the mark runs straight into the word — *l'eau* — so the row
+    /// can close the gap it leaves between the two labels.
+    let markJoins: Bool
 
     /// How the word can be heard.
     let audio: AudioAvailability
@@ -58,7 +66,10 @@ nonisolated struct WordRow: Identifiable, Hashable {
     ) {
         id = entry.id
         term = entry.term
-        article = entry.articlePrefix(in: profile) ?? ""
+        let genderMark = entry.genderMark(in: profile)
+        mark = genderMark?.text ?? ""
+        markedTerm = genderMark?.phrase(with: entry.term) ?? entry.term
+        markJoins = genderMark?.spacer.isEmpty == true
         meaning = entry.meaning
         note = entry.note
         self.deckName = deckName ?? ""

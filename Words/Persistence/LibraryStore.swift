@@ -54,6 +54,7 @@ final class LibraryStore {
         loadState = .loading
         do {
             library = try await persistence.load()
+            LanguageCatalog.register(library.customLanguages)
             loadState = .ready
         } catch {
             loadState = .failed(error.localizedDescription)
@@ -64,6 +65,10 @@ final class LibraryStore {
 
     func update(_ mutate: (inout Library) -> Void) {
         mutate(&library)
+        // The catalogue answers "what is this language called" from everywhere,
+        // including code that has no library to ask. These two lines — here and
+        // in `load` — are the only places it is told.
+        LanguageCatalog.register(library.customLanguages)
         scheduleSave()
     }
 
@@ -128,6 +133,28 @@ final class LibraryStore {
 
     func save(_ profile: LanguageProfile) {
         update { $0.upsert(profile) }
+    }
+
+    // MARK: - Languages the learner added
+
+    @discardableResult
+    func addCustomLanguage(name: String, flag: String) -> CustomLanguage {
+        let language = CustomLanguage(name: name, flag: flag)
+        update { $0.upsert(language) }
+        return language
+    }
+
+    func save(_ language: CustomLanguage) {
+        update { $0.upsert(language) }
+    }
+
+    /// Refused while a profile is still studying it; the caller asks
+    /// `library.profilesUsing(_:)` first so it can say which.
+    @discardableResult
+    func deleteCustomLanguage(id: String) -> Bool {
+        var removed = false
+        update { removed = $0.removeCustomLanguage(id: id) }
+        return removed
     }
 
     func deleteProfile(id: UUID) {

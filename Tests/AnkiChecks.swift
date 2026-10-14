@@ -111,7 +111,10 @@ func checkAnki() async {
 
     let pictured = AnkiImport.plan(notes: pictureNotes, mapping: pictureMapping, fieldNames: pictureType.fields, profile: french, audio: .deck, package: pictures, existing: [])
     check("a picture called “cat.jpg!d” is still found", pictured.words.first?.picture == "cat.jpg!d")
-    check("a language without articles keeps the word whole", pictured.words.first?.term == "le chat")
+    check("a French word now loses its article, as a German one always did", pictured.words.first?.term == "chat")
+    check("and the article it lost became its gender", pictured.words.first?.gender == .masculine)
+    check("a language with no genders keeps the word whole",
+          LanguageGenders.split(term: "le chat", language: "ja").term == "le chat")
     check("a table in the back becomes lines in the meaning", pictured.words[1].meaning == "le · the\nchien · dog")
     check("a placeholder is not a note", pictured.words[0].note.isEmpty)
     check("a note from a field with a name of its own says which it is", pictured.words[1].note == "Antonyms: chat")
@@ -238,7 +241,7 @@ func checkAnki() async {
     let pictureProfile = store.addProfile(name: "French", learningCode: "fr", nativeCode: "en")
     let picturePlan = AnkiImport.plan(notes: pictureNotes, mapping: pictureMapping, fieldNames: pictureType.fields, profile: pictureProfile, audio: .deck, package: pictures, existing: [])
     await store.importAnki(picturePlan.usable, from: pictures, profileID: pictureProfile.id, deckID: nil)
-    let cat = store.library.entries.first { $0.term == "le chat" }
+    let cat = store.library.entries.first { $0.term == "chat" }
     check("a picture is hung on its word", cat?.picture != nil)
     check("named for what it is, not what it was called", cat?.picture?.file.hasSuffix(".jpg") == true)
     check("a word's own recording is its audio", cat?.audio != nil && cat?.exampleAudio == nil)
@@ -372,7 +375,7 @@ func checkAnkiDecks() async {
     check("one deck is made at the top", top.map(\.name) == ["Course"])
     check("with its chapters inside it", store.library.subdecks(of: top[0].id).map(\.name) == ["Chapter 1", "Chapter 2"])
     check("the topic under a chapter is merged into it",
-          store.library.entries.first { $0.term == "le chien" }?.deckID == store.library.subdecks(of: top[0].id).first?.id)
+          store.library.entries.first { $0.term == "chien" }?.deckID == store.library.subdecks(of: top[0].id).first?.id)
     check("the deck counts every word inside it", store.library.wordCount(inDeck: top[0].id) == 3)
     check("and the result says where they went", result.count == 3 && result.placement.subdecks.count == 2)
 

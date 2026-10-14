@@ -64,6 +64,9 @@ checkExchange()
 checkDictation()
 checkSentencePrompt()
 checkRetention()
+checkLanguageRules()
+checkCustomLanguages()
+checkLanguageMigration()
 
 print("")
 if failures == 0 {

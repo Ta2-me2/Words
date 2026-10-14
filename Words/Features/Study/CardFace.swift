@@ -79,14 +79,6 @@ struct CardFace<BeforeAnswer: View, AfterAnswer: View>: View {
                     case .meaning: word
                     }
 
-                    // Only where the language has no article to show instead:
-                    // the gender still has to reach the learner somehow.
-                    if let gender = entry.gender, entry.articlePrefix(in: profile) == nil {
-                        Text(gender.title)
-                            .font(.callout)
-                            .foregroundStyle(Palette.secondaryText)
-                    }
-
                     // Only once the answer is out: hearing the word before
                     // recalling it would answer the question.
                     if canHearWord { listenButton }
@@ -131,19 +123,35 @@ struct CardFace<BeforeAnswer: View, AfterAnswer: View>: View {
         }
     }
 
-    /// The word, with its article once the answer is out.
+    /// Nothing between an elided article and its word — *l'eau* is one thing
+    /// to look at, not two — and the usual gap after everything else. The
+    /// mark itself knows which, so French is not named here.
+    private var markSpacing: CGFloat {
+        guard let mark = entry.genderMark(in: profile) else { return 12 }
+        return mark.spacer.isEmpty ? 0 : 12
+    }
+
+    /// The word, with its gender showing once the answer is out.
     ///
-    /// The article arrives with the answer and the pair settles back into the
+    /// One place for both kinds of mark, because to a learner they answer the
+    /// same question. German shows the article and says it — *die Mutter* —
+    /// and Russian shows the short form a dictionary prints and says nothing:
+    /// *жен.* beside *мама*, with only the word read aloud. Which of the two
+    /// it is belongs to the language, not to this view; all this knows is that
+    /// an article is set in the word's own size and a label is a note beside
+    /// it.
+    ///
+    /// The mark arrives with the answer and the pair settles back into the
     /// middle of the card. No timing of its own: it moves with everything else
-    /// the answer brings, so a word with an article opens exactly like a word
+    /// the answer brings, so a word with a mark opens exactly like a word
     /// without. On a card turned around the word is itself the answer, and has
-    /// its article from the moment it appears.
+    /// its mark from the moment it appears.
     private var word: some View {
         VStack(spacing: 4) {
-            HStack(spacing: 12) {
-                if isRevealed, let article = entry.articlePrefix(in: profile) {
-                    Text(article)
-                        .font(.largeTitle.weight(.semibold))
+            HStack(alignment: .firstTextBaseline, spacing: markSpacing) {
+                if isRevealed, let mark = entry.genderMark(in: profile) {
+                    Text(mark.text)
+                        .font(mark.isSpoken ? .largeTitle.weight(.semibold) : .callout)
                         .foregroundStyle(Palette.secondaryText)
                 }
 

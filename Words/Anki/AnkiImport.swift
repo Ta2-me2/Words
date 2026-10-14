@@ -125,7 +125,7 @@ nonisolated enum AnkiImport {
         // it louder than an article typed in front of the word.
         if let stated = mapping.fields(for: .gender)
             .lazy
-            .compactMap({ note.values[safe: $0].flatMap { Gender.parse($0.text) } })
+            .compactMap({ note.values[safe: $0].flatMap { Gender.parse($0.text, language: profile.learningCode) } })
             .first {
             gender = stated
         }

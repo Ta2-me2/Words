@@ -155,17 +155,21 @@ struct WordCardEditor: View {
                     .focused($focus, equals: .term)
                     .onSubmit { focus = .meaning }
             }
-        }, footnote: marksGender
-            ? "Type the article with the word — “die Mutter” — and the gender is filed for you."
-            : nil)
+        }, footnote: genderFootnote)
     }
 
-    /// Where the card shows "der", "die" or "das", so does this.
+    /// Where the card shows "der", "die" or "das", so does this — and where
+    /// it shows "жен.", so does this.
+    ///
+    /// Over the genders the *language* has, never over every gender there is:
+    /// Spanish has two and Dutch's two are not the same two, and a control
+    /// offering a third would be asking about something the language does not
+    /// do.
     private var articles: some View {
         Picker("Gender", selection: $gender) {
             Text("—").tag(Gender?.none)
-            ForEach(Gender.allCases) { gender in
-                Text(articleLabel(for: gender)).tag(Optional(gender))
+            ForEach(LanguageGenders.genders(for: profile.learningCode), id: \.self) { gender in
+                Text(markLabel(for: gender)).tag(Optional(gender))
             }
         }
         .pickerStyle(.segmented)
@@ -516,10 +520,27 @@ struct WordCardEditor: View {
         LanguageGenders.marksGender(profile.learningCode)
     }
 
+    /// What to say under the word about its gender, which is a different
+    /// sentence depending on what the language does with it. A language that
+    /// has an article has something to type; a language that only shows the
+    /// gender has something to choose, and the learner should know up front
+    /// that it will not be read out.
+    private var genderFootnote: String? {
+        guard let first = LanguageGenders.genders(for: profile.learningCode).first,
+              let mark = LanguageGenders.mark(first, language: profile.learningCode)
+        else { return nil }
+
+        return mark.isSpoken
+            ? "Type the article with the word and the gender is filed for you."
+            : "Shown beside the word on the card, and never read aloud."
+    }
+
     /// "die" reads better than "Feminine" on a button a German learner presses
-    /// twenty times a day.
-    private func articleLabel(for gender: Gender) -> String {
-        LanguageGenders.article(gender, language: profile.learningCode) ?? gender.short
+    /// twenty times a day, and "жен." reads better than either for a Russian
+    /// one. Both come from the same place, which is how the button and the
+    /// card are guaranteed to agree.
+    private func markLabel(for gender: Gender) -> String {
+        LanguageGenders.mark(gender, language: profile.learningCode)?.text ?? gender.short
     }
 
     /// The word without the article typed in front of it. "die Mutter" is how

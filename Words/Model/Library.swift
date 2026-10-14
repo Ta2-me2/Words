@@ -17,7 +17,14 @@ nonisolated struct Library: Codable, Sendable {
     /// 3 — the ease factor of the old algorithm became a stability and a
     /// difficulty. Converted card by card as the file is read, without moving a
     /// due date; see `SchedulingState.init(from:)`.
-    static let currentFormatVersion = 3
+    ///
+    /// 4 — Norwegian moved from `no` to `nb`, which is the code macOS files
+    /// its Norwegian voices under, so a Norwegian profile written before this
+    /// gets its voice back. The same pass lifts articles out of words in the
+    /// languages that have only now been given gender rules — a Spanish
+    /// learner's "la casa" becomes *casa*, feminine — which is exactly what 2
+    /// did when German was the only one.
+    static let currentFormatVersion = 4
 
     var formatVersion: Int
     var libraryID: UUID
@@ -42,6 +49,13 @@ nonisolated struct Library: Codable, Sendable {
     /// of a streak that is stored: see `Streak`.
     var streakFreezes: [Date]
 
+    /// Languages the learner added themselves.
+    ///
+    /// Here rather than in a file of their own because this document is
+    /// everything the app knows: a language that did not travel with an export
+    /// would arrive on the other Mac as a code with no name.
+    var customLanguages: [CustomLanguage]
+
     init() {
         formatVersion = Self.currentFormatVersion
         libraryID = UUID()
@@ -53,6 +67,7 @@ nonisolated struct Library: Codable, Sendable {
         sessions = []
         extras = []
         streakFreezes = []
+        customLanguages = []
     }
 
     init(from decoder: any Decoder) throws {
@@ -67,6 +82,7 @@ nonisolated struct Library: Codable, Sendable {
         sessions = try container.decodeIfPresent([StudySnapshot].self, forKey: .sessions) ?? []
         extras = try container.decodeIfPresent([DailyExtra].self, forKey: .extras) ?? []
         streakFreezes = try container.decodeIfPresent([Date].self, forKey: .streakFreezes) ?? []
+        customLanguages = try container.decodeIfPresent([CustomLanguage].self, forKey: .customLanguages) ?? []
 
         // A word whose language is gone can never be shown or studied. Its
         // reviews stay: they are a record of study that did happen.
@@ -91,14 +107,7 @@ nonisolated struct Library: Codable, Sendable {
             // but the word itself. Those words are lifted into a word and a
             // gender, which reads exactly the same on screen and can now be
             // asked about.
-            let languages = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0.learningCode) })
-            for index in entries.indices where entries[index].gender == nil {
-                guard let code = languages[entries[index].profileID] else { continue }
-                let (bare, gender) = LanguageGenders.split(term: entries[index].term, language: code)
-                guard let gender else { continue }
-                entries[index].term = bare
-                entries[index].gender = gender
-            }
+            Self.liftArticles(outOf: &entries, profiles: profiles)
         }
 
         if formatVersion < 3 {
@@ -109,7 +118,40 @@ nonisolated struct Library: Codable, Sendable {
             ScheduleMigration.replayHistory(into: &entries, reviews: reviews)
         }
 
+        if formatVersion < 4 {
+            // Norwegian was offered as "no", which is a macrolanguage above
+            // Bokmål and Nynorsk and which macOS has no voice for. Moving the
+            // profile to "nb" hands it back the two voices that were there all
+            // along, under the other code.
+            for index in profiles.indices {
+                if profiles[index].learningCode == "no" { profiles[index].learningCode = "nb" }
+                if profiles[index].nativeCode == "no" { profiles[index].nativeCode = "nb" }
+            }
+
+            // The same lift as 2, now that eighteen more languages know what
+            // an article of theirs looks like. Only words with no gender yet
+            // are touched, so a gender the learner chose is never overruled.
+            Self.liftArticles(outOf: &entries, profiles: profiles)
+        }
+
         formatVersion = Self.currentFormatVersion
+    }
+
+    /// Words that carry their own article — "la casa" — become a word and a
+    /// gender, which reads the same on screen and can be asked about.
+    ///
+    /// Conservative by construction: `split` only acts on exactly two words
+    /// where the first is an article of that language, so a phrase keeps every
+    /// word it was written with.
+    private static func liftArticles(outOf entries: inout [Entry], profiles: [LanguageProfile]) {
+        let languages = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0.learningCode) })
+        for index in entries.indices where entries[index].gender == nil {
+            guard let code = languages[entries[index].profileID] else { continue }
+            let (bare, gender) = LanguageGenders.split(term: entries[index].term, language: code)
+            guard let gender else { continue }
+            entries[index].term = bare
+            entries[index].gender = gender
+        }
     }
 
     // MARK: - Reading
@@ -446,6 +488,35 @@ nonisolated struct Library: Codable, Sendable {
         entries.removeAll { $0.profileID == id }
         sessions.removeAll { $0.profileID == id }
         extras.removeAll { $0.profileID == id }
+    }
+
+    // MARK: - Languages the learner added
+
+    mutating func upsert(_ language: CustomLanguage) {
+        if let index = customLanguages.firstIndex(where: { $0.id == language.id }) {
+            customLanguages[index] = language
+        } else {
+            customLanguages.append(language)
+        }
+    }
+
+    /// Forgets a language somebody added. Refused while a profile is still
+    /// studying it, because the words would stay and the name they are filed
+    /// under would not.
+    @discardableResult
+    mutating func removeCustomLanguage(id: String) -> Bool {
+        guard profilesUsing(id).isEmpty else { return false }
+        customLanguages.removeAll { $0.id == id }
+        return true
+    }
+
+    /// The profiles studying a language, or writing their meanings in it.
+    func profilesUsing(_ code: String) -> [LanguageProfile] {
+        profiles.filter { $0.learningCode == code || $0.nativeCode == code }
+    }
+
+    func customLanguage(id: String) -> CustomLanguage? {
+        customLanguages.first { $0.id == id }
     }
 
     // MARK: - Decks

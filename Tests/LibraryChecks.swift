@@ -201,5 +201,5 @@ func checkWordTableOrder() {
     check("by word, the way a dictionary sorts an umlaut",
           terms(WordSort(column: .word, ascending: true)) == ["ändern", "Apfel", "Brot", "Zug"])
     check("and backwards when asked", terms(WordSort(column: .word, ascending: false)) == ["Zug", "Brot", "Apfel", "ändern"])
-    check("the article is shown but never sorted on", rows.first { $0.term == "Zug" }?.article == "der")
+    check("the mark is shown but never sorted on", rows.first { $0.term == "Zug" }?.mark == "der")
 }

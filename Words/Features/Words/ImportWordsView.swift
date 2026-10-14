@@ -174,8 +174,10 @@ struct ImportWordsView: View {
         Table(plan.words) {
             TableColumn("Word") { word in
                 HStack(spacing: 4) {
-                    if let article = word.gender.flatMap({ LanguageGenders.article($0, language: profile.learningCode) }) {
-                        Text(article).foregroundStyle(Palette.secondaryText)
+                    if let mark = word.gender.flatMap({
+                        LanguageGenders.mark($0, before: word.term, language: profile.learningCode)
+                    }) {
+                        Text(mark.text).foregroundStyle(Palette.secondaryText)
                     }
                     Text(word.term)
                         .font(.body.weight(.medium))
