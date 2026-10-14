@@ -200,12 +200,31 @@ nonisolated struct DictationResult: Hashable, Sendable {
 nonisolated enum DictationCheck {
 
     static func mark(_ typed: String, against phrase: String) -> DictationResult {
+        mark(words: DictationText.words(of: typed), against: phrase)
+    }
+
+    /// The same, for an answer typed a box per word.
+    ///
+    /// A box left empty holds its place rather than closing the gap, so a
+    /// learner who could not catch the third word of five is told that the
+    /// third word is the one they missed, instead of having the fourth marked
+    /// wrong for standing where the third should have been. A box with two
+    /// words in it — which happens, because a box can be typed into freely —
+    /// gives up both, in order.
+    static func mark(boxes: [String], against phrase: String) -> DictationResult {
+        let given = boxes.flatMap { box -> [String] in
+            let words = DictationText.words(of: box)
+            return words.isEmpty ? [""] : words
+        }
+        return mark(words: given, against: phrase)
+    }
+
+    private static func mark(words given: [String], against phrase: String) -> DictationResult {
         let wanted = DictationText.words(of: phrase)
-        let given = DictationText.words(of: typed)
 
         var words: [DictationWord] = []
         for (index, expected) in wanted.enumerated() {
-            guard index < given.count else {
+            guard index < given.count, !given[index].isEmpty else {
                 words.append(DictationWord(id: index, expected: expected, typed: "", mark: .missing))
                 continue
             }
@@ -221,8 +240,11 @@ nonisolated enum DictationCheck {
             words.append(DictationWord(id: index, expected: expected, typed: actual, mark: mark))
         }
 
-        let extra = given.count > wanted.count ? Array(given[wanted.count...]) : []
-        return DictationResult(words: words, extra: extra)
+        // Boxes nobody typed in are not words typed where the phrase had none.
+        let extra = given.count > wanted.count
+            ? given[wanted.count...].filter { !$0.isEmpty }
+            : []
+        return DictationResult(words: words, extra: Array(extra))
     }
 
     /// What an answer is worth.

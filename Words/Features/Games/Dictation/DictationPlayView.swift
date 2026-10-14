@@ -18,7 +18,8 @@ struct DictationPlayView: View {
     let answered: (DictationItem, DictationResult, ReviewGrade, Double, Bool) -> Void
     let finish: () -> Void
 
-    @FocusState private var focused: Int?
+    /// The row of boxes being typed into, and which of them has the keyboard.
+    @State private var boxes = WordBoxes()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -31,7 +32,7 @@ struct DictationPlayView: View {
                         listen
                         switch session.phase {
                         case .typing:
-                            boxes
+                            typing
                         case .marked(let result, _):
                             marked(result, item: item)
                         }
@@ -55,7 +56,19 @@ struct DictationPlayView: View {
     private func begin() {
         guard let item = session.item else { return }
         speak(item, false)
-        focused = 0
+        Task { await takeTheKeyboard() }
+    }
+
+    /// The first box asks for the keyboard as soon as there is one to ask for.
+    ///
+    /// The boxes are made while the sheet is being laid out, and a field that
+    /// is not in a window yet cannot be given the keyboard. So it is asked for
+    /// until it is granted, which in practice is the first or second attempt.
+    private func takeTheKeyboard() async {
+        for _ in 0 ..< 20 {
+            if boxes.focus(0) { return }
+            try? await Task.sleep(for: .milliseconds(25))
+        }
     }
 
     // MARK: - Above
@@ -133,65 +146,54 @@ struct DictationPlayView: View {
         return DictationText.words(of: item.text)
     }
 
-    private var boxes: some View {
-        let written = DictationText.words(of: session.typed)
-        let active = written.count - (session.typed.last?.isWhitespace == true ? 0 : 1)
-
-        return VStack(spacing: 22) {
-            // What has been typed, word by word, over the shape each one has
-            // to take. Read-only: the typing happens in the field below, so
-            // there is no cursor to lose between boxes.
+    private var typing: some View {
+        VStack(spacing: 20) {
             WrapLayout(spacing: 12, lineSpacing: 18) {
                 ForEach(Array(words.enumerated()), id: \.offset) { index, word in
-                    slot(index: index, word: word, written: written, active: active)
+                    box(index: index, word: word)
                 }
             }
             .frame(maxWidth: .infinity)
 
-            TextField("", text: $session.typed, prompt: Text("Type what you hear"))
-                .textFieldStyle(.plain)
-                .font(.title2)
-                .multilineTextAlignment(.center)
-                .focused($focused, equals: 0)
-                .onSubmit(check)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .background(Palette.card, in: .rect(cornerRadius: Metrics.cardRadius, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: Metrics.cardRadius, style: .continuous)
-                        .strokeBorder(focused == 0 ? Palette.selection : Palette.separator, lineWidth: focused == 0 ? 2 : 1)
-                }
-                .frame(maxWidth: 520)
-
-            Text("Click anywhere in it to fix a word you have already passed.")
+            Text("Space moves to the next word · Return checks · ⌥← and ⌥→ go back and forth")
                 .font(.caption)
                 .foregroundStyle(Palette.tertiaryText)
         }
     }
 
-    /// One word of the phrase: what has been typed for it, and underneath the
-    /// shape it has to take.
-    private func slot(index: Int, word: String, written: [String], active: Int) -> some View {
-        let typed = index < written.count ? written[index] : ""
-        let isActive = index == active
+    /// One word of the phrase: a box to type it into, and underneath the shape
+    /// it has to take.
+    private func box(index: Int, word: String) -> some View {
+        let isActive = boxes.active == index
 
         return VStack(spacing: 4) {
-            Text(typed.isEmpty ? " " : typed)
-                .font(.title2.weight(.medium))
-                .foregroundStyle(typed.isEmpty ? Palette.tertiaryText : Palette.primaryText)
-                .lineLimit(1)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 7)
-                .frame(maxWidth: .infinity)
-                .background(
-                    isActive ? Palette.selection.opacity(0.12) : Palette.subtleFill.opacity(0.6),
-                    in: .rect(cornerRadius: Metrics.smallRadius, style: .continuous)
-                )
-                .overlay(alignment: .bottom) {
-                    Rectangle()
-                        .fill(isActive ? Palette.selection : Palette.separator)
-                        .frame(height: isActive ? 2 : 1)
-                }
+            WordBoxField(
+                text: Binding(
+                    get: { session.box(index) },
+                    set: { session.setBox(index, to: $0) }
+                ),
+                index: index,
+                count: words.count,
+                boxes: boxes,
+                spill: { words, from in session.fill(from: from, with: words) },
+                submit: check
+            )
+            .frame(height: 25)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(
+                isActive ? Palette.selection.opacity(0.12) : Palette.subtleFill.opacity(0.6),
+                in: .rect(cornerRadius: Metrics.smallRadius, style: .continuous)
+            )
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(isActive ? Palette.selection : Palette.separator)
+                    .frame(height: isActive ? 2 : 1)
+            }
+            .contentShape(.rect)
+            // A box is a target as well as a field: clicking anywhere in it,
+            // including the padding around the text, starts typing there.
+            .onTapGesture { boxes.focus(index, caretAtEnd: true) }
 
             Text(hint.drawn(for: word))
                 .font(.caption.monospaced())
@@ -356,7 +358,7 @@ struct DictationPlayView: View {
         // means the learner is still listening.
         guard session.revealed || !session.isEmpty else { return }
         session.check()
-        focused = nil
+        boxes.release()
     }
 
     /// Written down here and nowhere else: an answer is recorded once, when

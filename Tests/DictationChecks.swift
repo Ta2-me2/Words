@@ -195,30 +195,54 @@ func checkDictation() {
         items: [DictationItem(key: "written:1", text: "the house is big", meaning: "", source: .written, entryID: nil)],
         records: [:], allowance: 1, now: day, shuffle: false
     ))
+    check("a box for every word of the phrase", typing.boxes.count == 4)
     check("nothing typed yet", typing.isEmpty)
-    typing.typed = "   "
+    typing.setBox(0, to: "   ")
     check("and whitespace is still nothing", typing.isEmpty)
 
-    typing.typed = "the house is big"
+    typing.fill(from: 0, with: ["the", "house", "is", "big"])
     check("what was typed is what is marked",
-          DictationCheck.mark(typing.typed, against: "the house is big").isPerfect)
+          DictationCheck.mark(boxes: typing.boxes, against: "the house is big").isPerfect)
+    check("and the boxes read as one line", typing.typed == "the house is big")
 
-    // The line is one field, so a word in the middle can be changed on its own
+    // A box per word, so a word in the middle can be changed on its own
     // without the words after it being retyped.
-    typing.typed = typing.typed.replacingOccurrences(of: "big", with: "small")
+    typing.setBox(3, to: "small")
     check("a word in the middle can be changed on its own", typing.typed == "the house is small")
     check("and only that word is marked wrong",
-          DictationCheck.mark(typing.typed, against: "the house is big").words.count { $0.isFaulty } == 1)
+          DictationCheck.mark(boxes: typing.boxes, against: "the house is big").words.count { $0.isFaulty } == 1)
+
+    // A word that was never caught leaves its box empty, and the box holds its
+    // place: the word after it is not marked wrong for standing where it did.
+    typing.setBox(1, to: "")
+    typing.setBox(3, to: "big")
+    let gapped = DictationCheck.mark(boxes: typing.boxes, against: "the house is big")
+    check("an empty box is the word that was missed", gapped.words[1].mark == .missing)
+    check("and the words after it are still right",
+          gapped.words[2].mark == .right && gapped.words[3].mark == .right)
+
+    // Two words in one box are both given up, in order: a box is a field, and
+    // a field can be typed into freely.
+    var crowded = DictationSession(queue: DictationQueue(
+        items: [DictationItem(key: "written:3", text: "the house is big", meaning: "", source: .written, entryID: nil)],
+        records: [:], allowance: 1, now: day, shuffle: false
+    ))
+    crowded.setBox(0, to: "the house")
+    crowded.setBox(1, to: "is")
+    crowded.setBox(2, to: "big")
+    let spilled = DictationCheck.mark(boxes: crowded.boxes, against: "the house is big")
+    check("two words in one box are read as two", spilled.words.count { $0.mark == .right } == 4)
+    check("and nothing is counted as said after the phrase", spilled.extra.isEmpty)
 
     typing = DictationSession(queue: DictationQueue(
         items: [DictationItem(key: "written:2", text: "guten Tag", meaning: "", source: .written, entryID: nil)],
         records: [:], allowance: 1, now: day, shuffle: false
     ))
     typing.reveal()
-    check("showing it fills the line in", typing.typed == "guten Tag")
+    check("showing it fills the boxes in", typing.boxes == ["guten", "Tag"])
     check("and the answer counts as given", !typing.isEmpty)
     check("but it is worth nothing", DictationCheck.grade(
-        DictationCheck.mark(typing.typed, against: "guten Tag"), replays: 0, revealed: true) == .again)
+        DictationCheck.mark(boxes: typing.boxes, against: "guten Tag"), replays: 0, revealed: true) == .again)
 
     section("What is remembered")
 

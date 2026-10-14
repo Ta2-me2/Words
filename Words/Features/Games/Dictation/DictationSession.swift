@@ -20,16 +20,14 @@ final class DictationSession {
     private(set) var queue: DictationQueue
     private(set) var phase: Phase = .typing
 
-    /// What the learner has typed, as one line.
+    /// What the learner has typed: one box per word of the phrase.
     ///
-    /// One field rather than a box per word, after trying it the other way:
-    /// moving the cursor between boxes cannot be made to happen before the
-    /// next keystroke arrives, so a letter typed quickly after a space lands
-    /// in the box that was just left. One field has no such seam — and it is
-    /// the thing that lets the third word of eight be clicked into and fixed
-    /// without deleting the five after it, which is the whole reason for
-    /// having a real field at all.
-    var typed = ""
+    /// The shape of the answer is the shape of the phrase, which is the point
+    /// of the game — how many words there are is the first thing heard. The
+    /// boxes are kept here rather than in the view so that what was typed
+    /// survives a redraw, and so that marking can see which box was left
+    /// empty rather than only that a word is missing from the end.
+    private(set) var boxes: [String] = []
 
     private(set) var replays = 0
 
@@ -54,10 +52,50 @@ final class DictationSession {
 
     init(queue: DictationQueue) {
         self.queue = queue
+        emptyTheBoxes()
     }
 
     var isEmpty: Bool {
-        typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        boxes.allSatisfy { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
+
+    /// What was typed, as one line — for anything that wants the answer rather
+    /// than the shape of it.
+    var typed: String {
+        boxes.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
+
+    // MARK: - Typing
+
+    func box(_ index: Int) -> String {
+        boxes.indices.contains(index) ? boxes[index] : ""
+    }
+
+    func setBox(_ index: Int, to text: String) {
+        guard boxes.indices.contains(index) else { return }
+        boxes[index] = text
+    }
+
+    /// Several words at once, from the box they were typed or pasted into
+    /// onwards. Returns the box the cursor should land in — the one after the
+    /// last that was filled, or the last of them if there is nothing after.
+    @discardableResult
+    func fill(from index: Int, with words: [String]) -> Int {
+        guard !words.isEmpty else { return index }
+        var at = index
+        for word in words {
+            guard boxes.indices.contains(at) else { break }
+            boxes[at] = word
+            at += 1
+        }
+        return min(at, max(0, boxes.count - 1))
+    }
+
+    /// A box for every word of the phrase in front, all of them empty.
+    private func emptyTheBoxes() {
+        boxes = Array(repeating: "", count: words.count)
     }
 
     var item: DictationItem? { queue.current }
@@ -85,14 +123,14 @@ final class DictationSession {
     func reveal() {
         guard phase == .typing, let item else { return }
         revealed = true
-        typed = item.text
+        boxes = DictationText.words(of: item.text)
     }
 
     /// Marks what was typed. Returns what it was worth, and how long it took.
     @discardableResult
     func check() -> (result: DictationResult, grade: ReviewGrade, seconds: Double)? {
         guard phase == .typing, let item else { return nil }
-        let result = DictationCheck.mark(typed, against: item.text)
+        let result = DictationCheck.mark(boxes: boxes, against: item.text)
         let grade = DictationCheck.grade(result, replays: replays, revealed: revealed)
         lastSeconds = max(0, Date.now.timeIntervalSince(startedAt))
 
@@ -119,7 +157,7 @@ final class DictationSession {
     func advance() -> Bool {
         guard case .marked(_, let grade) = phase else { return false }
         let counted = queue.finish(grade)
-        typed = ""
+        emptyTheBoxes()
         replays = 0
         revealed = false
         phase = .typing
@@ -131,7 +169,7 @@ final class DictationSession {
     /// been deleted.
     func skip() {
         queue.skip()
-        typed = ""
+        emptyTheBoxes()
         replays = 0
         revealed = false
         phase = .typing
