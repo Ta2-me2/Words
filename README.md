@@ -49,10 +49,12 @@ and a tutor beside the card that can be asked anything in any language.
   translation;note`. It forgives what a person's file actually contains: blank
   lines, Markdown bullets, tabs, a dash where a semicolon should be. There is a
   prompt to hand an AI so the list it writes pastes straight in.
-- **One word at a time**, with everything optional except the word and what it
-  means — and a button that has the companion write the example sentence and
-  its translation for you, to read over and correct before the word goes in.
-  The same button sits in every row of a pasted list.
+- **One word at a time**, onto an empty card: every field where the finished
+  card puts it, the article where a language has one, a place to drop a photo
+  or draw an association, and Tab from one to the next. A button there has the
+  companion write the example sentence and its translation for you, to read
+  over and correct before the word goes in; the same button sits in every row
+  of a pasted list.
 - **From Words** — a `.wordspack` somebody exported, with its decks, its
   subdecks and its files intact.
 
@@ -158,7 +160,7 @@ Scripts/make-dmg.sh
 Tests/run.sh
 ```
 
-1160 checks over the scheduler, the queue, the day's allowance, decks and
+1166 checks over the scheduler, the queue, the day's allowance, decks and
 subdecks, the import formats, the Anki reader, the streak, the store and what the
 companion is told — compiled as a command-line binary, so they run in a couple of
 seconds and need no window.

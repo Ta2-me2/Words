@@ -28,17 +28,23 @@ struct AnkiImportView: View {
 
     @State private var stage: Stage = .choosing
     @State private var isChoosingFile = false
-    @State private var isTargeted = false
 
     var body: some View {
         Group {
             switch stage {
             case .choosing: choosing
-            case .reading: working("Reading the deck…", progress: nil)
+            case .reading: ImportProgress(title: "Reading the deck…")
             case .mapping(let model): mapping(model)
-            case .importing(let progress): working("Importing…", progress: progress)
+            case .importing(let progress): ImportProgress(title: "Importing…", progress: progress)
             case .done(let count, let placement): done(count: count, placement: placement)
-            case .failed(let message, let suggestion): failed(message, suggestion: suggestion)
+            case .failed(let message, let suggestion):
+                ImportFailure(
+                    title: "This Deck Could Not Be Opened",
+                    message: message,
+                    suggestion: suggestion,
+                    buttonTitle: "Choose Another Deck…",
+                    retry: { isChoosingFile = true }
+                )
             }
         }
         .fileImporter(isPresented: $isChoosingFile, allowedContentTypes: Self.packageTypes) { result in
@@ -53,71 +59,28 @@ struct AnkiImportView: View {
     // MARK: - Choosing a file
 
     private var choosing: some View {
-        ContentUnavailableView {
-            Label("Import an Anki Deck", systemImage: "square.and.arrow.down.on.square")
-        } description: {
-            Text("Drop an .apkg file here, or choose one. You will see how its cards come out in Words, and decide where each part goes, before anything is added.")
-        } actions: {
-            Button("Choose Deck…") { isChoosingFile = true }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background {
-            RoundedRectangle(cornerRadius: Metrics.cardRadius, style: .continuous)
-                .strokeBorder(Palette.selection, style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
-                .opacity(isTargeted ? 1 : 0)
-                .padding(Metrics.gutter)
-        }
-        .animation(.easeOut(duration: 0.12), value: isTargeted)
-        .dropDestination(for: URL.self) { urls, _ in
-            guard let url = urls.first(where: { $0.pathExtension.lowercased() == "apkg" }) else { return false }
-            open(url)
-            return true
-        } isTargeted: { isTargeted = $0 }
-    }
-
-    private func working(_ title: String, progress: Double?) -> some View {
-        VStack(spacing: 12) {
-            if let progress {
-                ProgressView(value: progress)
-                    .frame(width: 260)
-            } else {
-                ProgressView()
-            }
-            Text(title)
-                .foregroundStyle(Palette.secondaryText)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func failed(_ message: String, suggestion: String?) -> some View {
-        ContentUnavailableView {
-            Label("This Deck Could Not Be Opened", systemImage: "exclamationmark.triangle")
-        } description: {
-            Text([message, suggestion].compactMap { $0 }.joined(separator: "\n\n"))
-        } actions: {
-            Button("Choose Another Deck…") { isChoosingFile = true }
-                .controlSize(.large)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        ImportInvitation(
+            title: "Import an Anki Deck",
+            systemImage: "square.and.arrow.down.on.square",
+            description: "Drop an .apkg file here, or choose one. You will see how its cards come out in Words, and decide where each part goes, before anything is added.",
+            buttonTitle: "Choose Deck…",
+            fileExtension: "apkg",
+            choose: { isChoosingFile = true },
+            open: open
+        )
     }
 
     private func done(count: Int, placement: AnkiDeckPlacement) -> some View {
-        ContentUnavailableView {
-            Label("Imported \(count) \(count == 1 ? "Word" : "Words")", systemImage: "checkmark.circle")
-        } description: {
-            Text(doneDescription(placement))
-        } actions: {
-            Button("Show in Library") {
+        ImportSuccess(
+            title: "Imported \(count) \(count == 1 ? "Word" : "Words")",
+            description: doneDescription(placement),
+            showTitle: "Show in Library",
+            show: {
                 if let top = placement.top { router.show(deck: top.deck.id) } else { router.show(.library) }
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-
-            Button("Import Another Deck…") { isChoosingFile = true }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+            },
+            againTitle: "Import Another Deck…",
+            again: { isChoosingFile = true }
+        )
     }
 
     private func doneDescription(_ placement: AnkiDeckPlacement) -> String {
@@ -477,24 +440,13 @@ struct AnkiImportView: View {
     // MARK: Doing it
 
     private func footer(_ model: AnkiImportModel) -> some View {
-        HStack(spacing: 12) {
-            Text(summary(model.plan))
-                .font(.callout)
-                .monospacedDigit()
-                .foregroundStyle(Palette.secondaryText)
-                .lineLimit(2)
-
-            Spacer(minLength: 12)
-
-            let count = model.plan.usable.count
-            Button("Import \(count) \(count == 1 ? "Word" : "Words")") {
-                perform(model)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .keyboardShortcut(.defaultAction)
-            .disabled(model.mapping.problem != nil || count == 0)
-        }
+        let count = model.plan.usable.count
+        return ImportFooter(
+            summary: summary(model.plan),
+            buttonTitle: "Import \(count) \(count == 1 ? "Word" : "Words")",
+            isDisabled: model.mapping.problem != nil || count == 0,
+            action: { perform(model) }
+        )
     }
 
     private func summary(_ plan: AnkiImportPlan) -> String {

@@ -91,6 +91,18 @@ nonisolated struct WordsPackage: Sendable {
                 "The package is damaged: \(what)."
             }
         }
+
+        /// What to do about it, where there is something to be done.
+        var recoverySuggestion: String? {
+            switch self {
+            case .notAPackage:
+                "A Words package is a .wordspack file, written by Words ▸ Export."
+            case .tooNew:
+                nil
+            case .damaged:
+                "Ask whoever sent it for another copy — a file that was cut short while it was being copied reads like this."
+            }
+        }
     }
 
     let manifest: PackageManifest

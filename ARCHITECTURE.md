@@ -24,8 +24,13 @@ other language behind it. The five sections are:
   asked, the streak, a year of activity, the words that will not stick, and,
   once there is more than one language with a history, how they compare.
 - **Add Words** — a screen rather than a sheet, because adding is the thing done
-  most often. One word at a time, or a whole list pasted, dropped or chosen from
-  disk.
+  most often. Four ways in: one word at a time, a whole list pasted, dropped or
+  chosen from disk, an Anki deck, or a package another copy of Words wrote. The
+  one-word side is an empty card rather than a form — every field stands where
+  the finished card puts what goes in it, so somebody who has studied a card
+  knows what they are making while they make it. The two package sides are the
+  same screen with different nouns: choose the file, see what is inside it and
+  how a card will come out, say where it goes, watch it arrive.
 - **Library** — every word in the language, with the decks under it in the
   sidebar and each deck's subdecks under that. Selecting a deck filters the
   table and narrows the sitting; selecting a deck with subdecks takes them in
@@ -35,6 +40,12 @@ other language behind it. The five sections are:
 - **Games** — a shelf of games played with the language's own words. One today,
   WordFall; a game is played in the window's main area beside the sidebar, and
   grows with the window.
+
+The app's own preferences — how it looks, and which companion answers beside a
+card — are behind ⌘, and behind the button next to the sidebar toggle, which
+are the same window. There was briefly a popover there with the one preference
+that existed at the time; two doors onto the same room, one of which showed half
+of it, is how a learner comes to believe the other half does not exist.
 
 ## Three things worth knowing
 
@@ -655,13 +666,23 @@ many words, and what each begins with — and the learner types it back.
   it pointed at its own deck.
 - **The screen.** Laid out like Home — what today asks for, what the game is
   played with, how it has been going, a year of days — and the sitting itself
-  is a sheet, like a review. The typing is one field rather than a box per
-  word, after trying it the other way: the cursor cannot be moved between
-  boxes before the next keystroke arrives, so a letter typed quickly after a
-  space lands in the box just left. One field has no such seam, and it is what
-  lets the third word of eight be clicked into and fixed without deleting the
-  five after it. The boxes are still drawn above it, filling as the words are
-  typed, with each word's shape under its own.
+  is a sheet, like a review. A box per word, with that word's shape under it,
+  and the typing goes into the boxes themselves.
+- **Why the boxes are AppKit.** A box has to hand the keyboard to its
+  neighbour inside the keystroke that asked for it. SwiftUI's own focus cannot:
+  `@FocusState` is applied on the next pass through the view tree, and a space
+  typed quickly is followed by its letter before that pass happens — which is
+  how "Das Haus ist sehr gross" came out as "Das | Hausi | sts | ehrg | ross",
+  and why the boxes were once replaced by a single field. `WordBoxField` wraps
+  an `NSTextField` whose delegate calls `makeFirstResponder` itself, which is
+  synchronous: by the time the next key event is dispatched the next box is
+  already the one being typed into. The same delegate makes the row read as one
+  line of text — Backspace at the start of a box goes back to the one before,
+  the arrow keys cross at the edges, Tab and ⇧Tab step, Return checks, and a
+  phrase pasted into the first box lands a word in each. It also turns off the
+  Mac's automatic spelling correction, which exists precisely to replace a
+  half-typed foreign word and would mark the learner wrong for something they
+  did not type.
 - **Marking.** Word by word, and case and punctuation are not what is being
   practised, so they are not what is marked wrong. What was typed stays where
   it was typed, in the colour it earned, and the word it should have been
