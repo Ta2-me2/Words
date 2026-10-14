@@ -37,8 +37,8 @@ struct Sidebar: View {
         .toolbar {
             // Beside the sidebar toggle, where the window's own controls live
             // rather than the library's.
-            ToolbarItem(id: "sidebar.appearance", placement: .navigation) {
-                AppearanceMenu()
+            ToolbarItem(id: "sidebar.settings", placement: .navigation) {
+                SettingsButton()
             }
         }
         .navigationSplitViewColumnWidth(
