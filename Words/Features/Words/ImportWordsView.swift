@@ -186,6 +186,7 @@ struct ImportWordsView: View {
                             .foregroundStyle(Palette.secondaryText)
                     }
                 }
+                .reads(profile.learningCode)
                 .opacity(word.isImportable ? 1 : 0.45)
             }
             .width(min: 100, ideal: 150)

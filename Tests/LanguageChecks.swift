@@ -177,6 +177,16 @@ func checkLanguageRules() {
     check("while the one it does is read", Gender.parse("de", language: "nl") == .common)
     check("an example is not a gender", Gender.parse("the mother of my father") == nil)
 
+    section("Language rules — which way a language is read")
+
+    check("Arabic reads right to left", LanguageCatalog.isRightToLeft("ar"))
+    check("so does Hebrew", LanguageCatalog.isRightToLeft("he"))
+    check("Persian too, for a profile written before it was dropped", LanguageCatalog.isRightToLeft("fa"))
+    check("English does not", !LanguageCatalog.isRightToLeft("en"))
+    check("nor Russian", !LanguageCatalog.isRightToLeft("ru"))
+    check("nor Japanese", !LanguageCatalog.isRightToLeft("ja"))
+    check("nor a language the learner invented", !LanguageCatalog.isRightToLeft("x-1a2b3c4d"))
+
     section("Language rules — the catalogue")
 
     check("thirty-one languages are offered", LanguageCatalog.codes.count == 31)

@@ -368,6 +368,15 @@ final class WordCell: NSTableCellView {
             // An elided article is part of the word it stands in front of, so
             // the gap between the two labels closes: "l'eau", not "l' eau".
             wordStack?.spacing = row.markJoins ? 0 : Self.markGap
+            // An Arabic word belongs at the right-hand edge of its column with
+            // its mark after it. Setting the direction on the cell flips the
+            // leading edge the stack is pinned to as well as the order of the
+            // two labels inside it, so one line does both.
+            let direction: NSUserInterfaceLayoutDirection = row.readsRightToLeft ? .rightToLeft : .leftToRight
+            userInterfaceLayoutDirection = direction
+            wordStack?.userInterfaceLayoutDirection = direction
+            primary.alignment = row.readsRightToLeft ? .right : .left
+            secondary.alignment = primary.alignment
             primary.stringValue = row.term
             toolTip = row.markedTerm
 

@@ -28,6 +28,10 @@ nonisolated struct WordRow: Identifiable, Hashable {
     /// can close the gap it leaves between the two labels.
     let markJoins: Bool
 
+    /// Whether this word's language is read right to left, so the row puts the
+    /// word at the right-hand edge with its mark after it.
+    let readsRightToLeft: Bool
+
     /// How the word can be heard.
     let audio: AudioAvailability
 
@@ -70,6 +74,7 @@ nonisolated struct WordRow: Identifiable, Hashable {
         mark = genderMark?.text ?? ""
         markedTerm = genderMark?.phrase(with: entry.term) ?? entry.term
         markJoins = genderMark?.spacer.isEmpty == true
+        readsRightToLeft = LanguageCatalog.isRightToLeft(profile.learningCode)
         meaning = entry.meaning
         note = entry.note
         self.deckName = deckName ?? ""

@@ -93,6 +93,9 @@ struct CardFace<BeforeAnswer: View, AfterAnswer: View>: View {
 
                                 if canHearExample { exampleButton }
                             }
+                            // The sentence only. Its translation is in the
+                            // other language and reads the other way.
+                            .reads(profile.learningCode)
 
                             if !entry.exampleTranslation.isEmpty {
                                 Text(entry.exampleTranslation)
@@ -175,6 +178,7 @@ struct CardFace<BeforeAnswer: View, AfterAnswer: View>: View {
             }
         }
         .multilineTextAlignment(.center)
+        .reads(profile.learningCode)
     }
 
     /// As big as the word it answers when it is a word: a translation in small

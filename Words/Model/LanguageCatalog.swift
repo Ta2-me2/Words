@@ -137,6 +137,24 @@ nonisolated enum LanguageCatalog {
         flags(for: code).first ?? "🏳️"
     }
 
+    // MARK: - How it is read
+
+    /// Whether a language is written right to left.
+    ///
+    /// Asked of the system rather than listed here, for the same reason the
+    /// names are: Unicode already knows, and a list kept by hand is one more
+    /// thing to forget when a language is added. A language the learner
+    /// invented reads left to right, because nothing has been said about it.
+    static func isRightToLeft(_ code: String) -> Bool {
+        if CustomLanguage.isCustom(code) { return false }
+        if let known = directions.withLock({ $0[code] }) { return known }
+        let rtl = Locale.Language(identifier: code).characterDirection == .rightToLeft
+        directions.withLock { $0[code] = rtl }
+        return rtl
+    }
+
+    private static let directions = Mutex<[String: Bool]>([:])
+
     // MARK: - First guesses
 
     /// The Mac's own language, used as the first guess at what the learner

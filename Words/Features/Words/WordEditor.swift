@@ -45,6 +45,7 @@ struct WordEditor: View {
                 Section {
                     TextField(LanguageCatalog.name(for: profile.learningCode), text: $term, prompt: Text("Word"))
                         .focused($isFocused)
+                        .reads(profile.learningCode)
 
                     TextField(LanguageCatalog.name(for: profile.nativeCode), text: $meaning, prompt: Text("Meaning"))
 
@@ -52,10 +53,10 @@ struct WordEditor: View {
 
                     if LanguageGenders.marksGender(profile.learningCode) {
                         Picker("Gender", selection: $gender) {
-                            Text("—").tag(Gender?.none)
-                            ForEach(LanguageGenders.genders(for: profile.learningCode), id: \.self) { gender in
-                                Text(LanguageGenders.mark(gender, language: profile.learningCode)?.text ?? gender.short)
-                                    .tag(Optional(gender))
+                            ForEach(genderChoices, id: \.self) { choice in
+                                Text(choice.map {
+                                    LanguageGenders.mark($0, language: profile.learningCode)?.text ?? $0.short
+                                } ?? "—").tag(choice)
                             }
                         }
                         .pickerStyle(.segmented)
@@ -145,6 +146,14 @@ struct WordEditor: View {
         }
         .frame(width: 480, height: 560)
         .task { isFocused = true }
+    }
+
+    /// The choices in the order they should be read: nothing chosen, then the
+    /// genders the language has, reversed where the language is read right to
+    /// left. See the same property on `WordCardEditor` for why.
+    private var genderChoices: [Gender?] {
+        let choices: [Gender?] = [nil] + LanguageGenders.genders(for: profile.learningCode).map { $0 }
+        return LanguageCatalog.isRightToLeft(profile.learningCode) ? choices.reversed() : choices
     }
 
     private var decks: [Deck] {

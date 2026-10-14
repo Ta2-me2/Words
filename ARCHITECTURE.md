@@ -83,6 +83,20 @@ put it right. The articles that prove nothing are stripped without a guess:
 German *ein* is masculine and neuter both, Norwegian *en* is legal in front of
 a feminine, French *l'* is either gender.
 
+**A card holds two languages, so it is laid out in two directions.** Arabic and
+Hebrew read right to left and their meanings, written in Russian or English, do
+not. So the direction is applied to each run of text in one language — the word
+with its mark, the example sentence — rather than to the screen: flipping the
+whole card would put the translation's full stop on the wrong end and its
+listen button on the wrong side. Which languages those are is asked of the
+system rather than listed, like the names and for the same reason. What it
+moves is the order of things in a row (the mark to the right of the noun, the
+listen button to the left of the sentence) and the base direction a mixed line
+is laid against, which is what decides where a sentence's full stop lands. The
+gender control is the one place the direction is written out by hand: it is an
+AppKit segmented control underneath and lays its segments out left to right
+whatever the environment says, so its choices are reversed instead.
+
 **Languages the learner added.** `CustomLanguage` is a name and a flag under a
 private-use code, kept in the library document so it travels with an export.
 It carries nothing else, because inventing the grammar of a language the app

@@ -155,6 +155,10 @@ struct WordCardEditor: View {
                     .focused($focus, equals: .term)
                     .onSubmit { focus = .meaning }
             }
+            // So the gender control sits on the side of the word the card
+            // will put the mark on, and an Arabic word is typed from the
+            // right-hand edge of its field.
+            .reads(profile.learningCode)
         }, footnote: genderFootnote)
     }
 
@@ -167,9 +171,8 @@ struct WordCardEditor: View {
     /// do.
     private var articles: some View {
         Picker("Gender", selection: $gender) {
-            Text("—").tag(Gender?.none)
-            ForEach(LanguageGenders.genders(for: profile.learningCode), id: \.self) { gender in
-                Text(markLabel(for: gender)).tag(Optional(gender))
+            ForEach(genderChoices, id: \.self) { choice in
+                Text(choice.map(markLabel) ?? "—").tag(choice)
             }
         }
         .pickerStyle(.segmented)
@@ -185,6 +188,7 @@ struct WordCardEditor: View {
                 .foregroundStyle(Palette.secondaryText)
                 .multilineTextAlignment(.center)
                 .focused($focus, equals: .transcription)
+                .reads(profile.learningCode)
         }
     }
 
@@ -227,6 +231,7 @@ struct WordCardEditor: View {
                 .lineLimit(1 ... 3)
                 .multilineTextAlignment(.center)
                 .focused($focus, equals: .example)
+                .reads(profile.learningCode)
         }, footnote: writer.refusal(for: bareTerm))
     }
 
@@ -539,6 +544,19 @@ struct WordCardEditor: View {
     /// twenty times a day, and "жен." reads better than either for a Russian
     /// one. Both come from the same place, which is how the button and the
     /// card are guaranteed to agree.
+    /// The choices in the order they should be read: nothing chosen, then the
+    /// genders the language has.
+    ///
+    /// Reversed for a language read right to left, because the segmented
+    /// control underneath is an AppKit one and lays its segments out left to
+    /// right whatever the environment around it says. An Arabic learner
+    /// therefore meets the empty choice first — from the right — exactly as a
+    /// German one does from the left.
+    private var genderChoices: [Gender?] {
+        let choices: [Gender?] = [nil] + LanguageGenders.genders(for: profile.learningCode).map { $0 }
+        return LanguageCatalog.isRightToLeft(profile.learningCode) ? choices.reversed() : choices
+    }
+
     private func markLabel(for gender: Gender) -> String {
         LanguageGenders.mark(gender, language: profile.learningCode)?.text ?? gender.short
     }
