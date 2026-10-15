@@ -67,6 +67,7 @@ checkRetention()
 checkLanguageRules()
 checkCustomLanguages()
 checkLanguageMigration()
+checkGreetings()
 
 print("")
 if failures == 0 {

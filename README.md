@@ -160,7 +160,7 @@ Scripts/make-dmg.sh
 Tests/run.sh
 ```
 
-1442 checks over the scheduler, the queue, the day's allowance, decks and
+1480 checks over the scheduler, the queue, the day's allowance, decks and
 subdecks, the import formats, the Anki reader, the streak, the store, what each
 of the thirty-one languages does with gender, and what the
 companion is told — compiled as a command-line binary, so they run in a couple of

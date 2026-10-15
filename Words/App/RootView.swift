@@ -10,11 +10,24 @@ struct RootView: View {
     var body: some View {
         @Bindable var router = router
 
-        NavigationSplitView {
-            Sidebar()
-        } detail: {
-            detail
+        ZStack {
+            if showsIntro {
+                // The first thing anybody sees, and the thing anybody sees
+                // again if they ever empty the library: there is no library
+                // without a language in it, so an empty one is always either
+                // a beginning or a fresh start.
+                IntroView(onFinished: begin)
+                    .transition(.opacity)
+            } else {
+                NavigationSplitView {
+                    Sidebar()
+                } detail: {
+                    detail
+                }
+                .transition(.opacity)
+            }
         }
+        .animation(.easeInOut(duration: 0.8), value: showsIntro)
         .task {
             await store.load()
             router.restoreSelection(in: store.library)
@@ -31,6 +44,50 @@ struct RootView: View {
         .sheet(item: $router.sheet) { route in
             sheet(for: route)
         }
+    }
+
+    /// Whether to open with the introduction rather than with the app.
+    ///
+    /// No flag written anywhere, because the library already answers it: a
+    /// library with no language in it has either never been used or has just
+    /// been emptied, and both want the same screen. It also means finishing
+    /// the introduction is what dismisses it — the language it creates is the
+    /// thing that makes the question false.
+    ///
+    /// Only once the file has really been read. A library that failed to open
+    /// has no languages in it either, and inviting somebody to start again on
+    /// top of their own words is the one unforgivable thing this screen could
+    /// do.
+    private var showsIntro: Bool {
+        store.loadState == .ready && store.library.profiles.isEmpty
+    }
+
+    /// What the introduction decided, made real.
+    private func begin(_ choice: IntroChoice) {
+        let code: String
+        switch choice {
+        case .known(let known):
+            code = known
+        case .invented(let name, let flag):
+            code = store.addCustomLanguage(name: name, flag: flag).id
+        }
+
+        let profile = store.addProfile(
+            name: LanguageCatalog.name(for: code),
+            learningCode: code,
+            nativeCode: Self.meanings(besides: code),
+            flag: choice.flag
+        )
+        router.profileID = profile.id
+        router.show(.home)
+    }
+
+    /// The language to write meanings in: the Mac's own, unless that is the
+    /// one being learned.
+    private static func meanings(besides learning: String) -> String {
+        let system = LanguageCatalog.systemCode
+        guard system == learning else { return system }
+        return learning == "en" ? "es" : "en"
     }
 
     @ViewBuilder

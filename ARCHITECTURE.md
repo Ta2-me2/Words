@@ -83,6 +83,39 @@ put it right. The articles that prove nothing are stripped without a guess:
 German *ein* is masculine and neuter both, Norwegian *en* is legal in front of
 a feminine, French *l'* is either gender.
 
+**The first screen is a conversation, not a form.** A library with no language
+in it has either never been used or has just been emptied, and both want the
+same screen — so there is no "has seen the introduction" flag anywhere; the
+library already answers the question, and the language the introduction creates
+is what makes the answer change. It is gated on the file having really been
+read, because a library that failed to open also has no languages in it, and
+inviting somebody to start again on top of their own words is the one
+unforgivable thing that screen could do.
+
+The companion is drawn rather than animated: `CloudShape` is a handful of
+overlapping circles filled as one path, and `CompanionMood` is a table of poses
+it is eased between. Its *life* — breathing, bobbing, blinking, the wander of
+the eyes — is worked out from the clock, so there is no timer to leak and it is
+in the same place whenever a view is rebuilt; its *pose* is eased by hand,
+because a `TimelineView` redraws every frame and SwiftUI's own animation would
+be overwritten before it had travelled anywhere. It never leaves the screen
+while the introduction runs. That is the whole trick: a wizard that replaces
+its contents step by step reads as a form being filled in, and a character that
+stays put while the room changes around it reads as somebody talking to you.
+
+It has no mouth, so it smiles with its eyes and says nothing out loud. Asking
+it to speak with a system voice would be a human voice coming out of a drawn
+face, which is the wrong kind of surprise.
+
+Which language somebody means is read from a table of greetings rather than
+guessed by a recogniser, because one short word is not enough for one:
+*hallo* is German, Dutch, Danish and Norwegian, and a recogniser that picks one
+of them picks wrong three times in four. Both scripts are held — *привет* and
+*privet* — since somebody who decided this morning to learn Russian has no
+Cyrillic keyboard. Where a form is shared the companion asks, and that is the
+best moment in the whole sequence rather than a failure of it. What it cannot
+place at all it says so about, and offers the list or a language of your own.
+
 **A card holds two languages, so it is laid out in two directions.** Arabic and
 Hebrew read right to left and their meanings, written in Russian or English, do
 not. So the direction is applied to each run of text in one language — the word
@@ -882,7 +915,10 @@ before it was ever studied, the streak and its freezes, what each of the
 thirty-one languages does with gender — every mark, the shape an article takes
 in front of a word, the articles that prove nothing, the invariants a new row
 has to satisfy, a language somebody added and a library written before
-Norwegian moved to the code its voices are under — the three kinds of sitting and the promise that
+Norwegian moved to the code its voices are under — which language a typed hello
+means, the seventeen greetings more than one language writes the same way, and
+the promise that every language can be reached by typing and not only by
+pointing, the three kinds of sitting and the promise that
 two of them change nothing, a daily limit on reviews and what it may never hold back, the extra a learner asks for once the day is done and the promise that it is gone tomorrow, a sitting stopped half-way and picked up again the
 same day, the arithmetic of the memory model and everything it is not allowed to
 do — a stability of nought, an interval that shrinks, a Hard longer than a Good,

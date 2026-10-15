@@ -15,10 +15,11 @@ swiftc -swift-version 6 -default-isolation MainActor -O \
   ../Words/Features/Study/StudySession.swift \
   ../Words/Features/Games/Dictation/DictationSession.swift \
   ../Words/Features/Library/WordRow.swift ../Words/DesignSystem/Palette.swift \
+  ../Words/Features/Intro/Greeting/Greetings.swift \
   SchedulerChecks.swift QueueChecks.swift PromptChecks.swift AssistantChecks.swift PracticeOptionChecks.swift StreakChecks.swift LimitChecks.swift LibraryChecks.swift \
   DeckChecks.swift InsightsChecks.swift ActivityLayoutChecks.swift ImportChecks.swift PracticeChecks.swift \
   SessionChecks.swift EndlessChecks.swift AudioChecks.swift AssociationChecks.swift AnkiChecks.swift GameChecks.swift \
-  PersistenceChecks.swift StoreChecks.swift ExchangeChecks.swift DictationChecks.swift SentenceChecks.swift RetentionChecks.swift LanguageChecks.swift main.swift \
+  PersistenceChecks.swift StoreChecks.swift ExchangeChecks.swift DictationChecks.swift SentenceChecks.swift RetentionChecks.swift LanguageChecks.swift GreetingChecks.swift main.swift \
   -o /tmp/words-modelchecks
 
 /tmp/words-modelchecks
