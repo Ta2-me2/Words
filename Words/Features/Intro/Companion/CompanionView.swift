@@ -163,7 +163,13 @@ struct CompanionView: View {
     private func eye(at x: CGFloat, pose: CompanionExpression, life: Life, gaze: CGSize) -> some View {
         let width = size * Face.width
         let height = size * Face.tall
-        let open = max(0, pose.eyeOpen * (1 - life.blink) * (1 - pose.happiness))
+        // The open eye and the smile are never both on screen. They used to
+        // cross-fade through each other, and halfway through you could see an
+        // eye with a smile drawn over it — so the eye is gone before the
+        // smile has really started, with the briefest overlap in between.
+        let smiling = Self.smoothstep(0.45, 1.0, pose.happiness)
+        let showingEye = 1 - Self.smoothstep(0.0, 0.55, pose.happiness)
+        let open = max(0, pose.eyeOpen * (1 - life.blink)) * showingEye
         let travel = size * 0.020
 
         return ZStack {
@@ -188,8 +194,8 @@ struct CompanionView: View {
                     .offset(x: gaze.width * travel, y: gaze.height * travel - height * 0.03)
             }
             .frame(width: width, height: height)
-            .scaleEffect(y: open, anchor: .center)
-            .opacity(open > 0.02 ? 1 : 0)
+            .scaleEffect(y: max(open, 0.001), anchor: .center)
+            .opacity(showingEye)
 
             // The smile, which is the whole of its face: it has no mouth, so
             // happiness has to happen in the eyes or nowhere.
@@ -197,7 +203,7 @@ struct CompanionView: View {
                 .stroke(Color(red: 0.06, green: 0.06, blue: 0.08),
                         style: StrokeStyle(lineWidth: size * 0.032, lineCap: .round))
                 .frame(width: width * 1.1, height: height * 0.40)
-                .opacity(pose.happiness)
+                .opacity(smiling)
         }
         .position(x: size * x, y: size * Face.height)
     }
@@ -215,11 +221,19 @@ struct CompanionView: View {
     }
 
     /// A little past the mark and back, which is what makes a face look like
-    /// it meant the expression rather than arrived at it.
+    /// it meant the expression rather than arrived at it. Gently: a soft thing
+    /// that snaps past its pose and back reads as a twitch.
     private static func easeOutBack(_ t: Double) -> Double {
-        let c = 1.18
+        let c = 0.72
         let p = t - 1
         return 1 + (c + 1) * p * p * p + c * p * p
+    }
+
+    /// Nought below, one above, and a smooth ride in between.
+    private static func smoothstep(_ from: Double, _ to: Double, _ x: Double) -> Double {
+        guard to > from else { return x >= to ? 1 : 0 }
+        let t = min(max((x - from) / (to - from), 0), 1)
+        return t * t * (3 - 2 * t)
     }
 }
 

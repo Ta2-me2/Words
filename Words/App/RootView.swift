@@ -11,14 +11,26 @@ struct RootView: View {
         @Bindable var router = router
 
         ZStack {
-            if showsIntro {
+            switch opening {
+            case .deciding:
+                // The library has not been read yet, so it is not known which
+                // of the two this is. Showing the app's own frame here is what
+                // made a first launch flash a sidebar and an empty home for a
+                // few frames before the introduction arrived; showing the
+                // introduction's own background instead means the first frame
+                // anybody sees is already the right one either way.
+                IntroBackdrop()
+                    .transition(.opacity)
+
+            case .intro:
                 // The first thing anybody sees, and the thing anybody sees
                 // again if they ever empty the library: there is no library
                 // without a language in it, so an empty one is always either
                 // a beginning or a fresh start.
                 IntroView(onFinished: begin)
                     .transition(.opacity)
-            } else {
+
+            case .app:
                 NavigationSplitView {
                     Sidebar()
                 } detail: {
@@ -27,7 +39,7 @@ struct RootView: View {
                 .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.8), value: showsIntro)
+        .animation(.easeInOut(duration: 0.8), value: opening)
         .task {
             await store.load()
             router.restoreSelection(in: store.library)
@@ -46,6 +58,14 @@ struct RootView: View {
         }
     }
 
+    /// What the window is showing.
+    private enum Opening {
+        /// The library is still being read, so it is not yet known.
+        case deciding
+        case intro
+        case app
+    }
+
     /// Whether to open with the introduction rather than with the app.
     ///
     /// No flag written anywhere, because the library already answers it: a
@@ -58,8 +78,20 @@ struct RootView: View {
     /// has no languages in it either, and inviting somebody to start again on
     /// top of their own words is the one unforgivable thing this screen could
     /// do.
-    private var showsIntro: Bool {
-        store.loadState == .ready && store.library.profiles.isEmpty
+    private var opening: Opening {
+        switch store.loadState {
+        case .loading:
+            .deciding
+        case .failed:
+            // A library that failed to open has no languages in it either, and
+            // inviting somebody to start again on top of their own words is
+            // the one unforgivable thing this screen could do. The failure
+            // belongs to the app, which can say what went wrong and offer to
+            // try again.
+            .app
+        case .ready:
+            store.library.profiles.isEmpty ? .intro : .app
+        }
     }
 
     /// What the introduction decided, made real.

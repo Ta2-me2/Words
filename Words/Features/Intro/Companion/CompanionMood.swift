@@ -52,10 +52,16 @@ nonisolated enum CompanionMood: Hashable, Sendable, CaseIterable {
             CompanionExpression(eyeOpen: 1.12, gaze: CGSize(width: 0.28, height: -0.1), tilt: .degrees(9),
                                 squash: -0.02, bob: 4, breath: 3.6, scale: 1)
         case .watching:
-            CompanionExpression(eyeOpen: 0.95, gaze: CGSize(width: -0.35, height: 0.05), tilt: .degrees(-2),
+            // Looking right, because that is where the film is. A character
+            // standing beside something and looking away from it is the
+            // clearest way to say it is not paying attention.
+            CompanionExpression(eyeOpen: 0.95, gaze: CGSize(width: 0.55, height: 0.05), tilt: .degrees(2),
                                 squash: 0, bob: 4.5, breath: 3.8, scale: 0.86)
         case .leaving:
-            CompanionExpression(eyeOpen: 0.9, happiness: 0.35, gaze: .zero, tilt: .degrees(0),
+            // Eyes closed, not half closed. A happiness of a third would draw
+            // an open eye and a smile on top of each other, which is a face
+            // with four eyes rather than a face that is pleased.
+            CompanionExpression(eyeOpen: 1, happiness: 1, gaze: .zero, tilt: .degrees(0),
                                 squash: -0.04, bob: 2, breath: 5.0, scale: 1.06)
         }
     }

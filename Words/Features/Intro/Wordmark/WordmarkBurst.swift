@@ -54,11 +54,6 @@ struct WordmarkBurst: View {
             let p = progress(at: context.date)
 
             ZStack {
-                // The body, holding its breath and then letting go.
-                CompanionView(mood: .leaving, size: bodySize)
-                    .scaleEffect(1 + Self.swell(p) * 0.06)
-                    .opacity(Self.bodyFade(p))
-
                 Canvas { canvas, size in
                     guard p > 0.08 else { return }
                     let centre = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -94,21 +89,16 @@ struct WordmarkBurst: View {
         }
     }
 
-    /// The same beat without the motion: the companion dissolves into the word
-    /// and that is all. Nothing flies anywhere, because for somebody who has
+    /// The same beat without the motion: the word simply appears where the
+    /// companion was. Nothing flies anywhere, because for somebody who has
     /// asked for less motion a cloud of a thousand moving dots is the exact
     /// thing they asked not to see.
     private var calm: some View {
-        ZStack {
-            CompanionView(mood: .leaving, size: bodySize)
-                .opacity(finished ? 0 : 1)
-
-            Text(wordmark)
-                .font(.system(size: markSize, weight: .semibold, design: .rounded))
-                .foregroundStyle(Palette.primaryText)
-                .opacity(finished ? 1 : 0)
-        }
-        .animation(.smooth(duration: 0.9), value: finished)
+        Text(wordmark)
+            .font(.system(size: markSize, weight: .semibold, design: .rounded))
+            .foregroundStyle(Palette.primaryText)
+            .opacity(finished ? 1 : 0)
+            .animation(.smooth(duration: 0.9), value: finished)
     }
 
     // MARK: - Timing
@@ -116,16 +106,6 @@ struct WordmarkBurst: View {
     private func progress(at date: Date) -> Double {
         guard let began else { return 0 }
         return min(1, max(0, date.timeIntervalSince(began) / duration))
-    }
-
-    /// The body swells a little before it goes, which is the breath in that
-    /// makes the next moment read as deliberate rather than as a glitch.
-    private static func swell(_ p: Double) -> Double {
-        p < 0.16 ? sin(p / 0.16 * .pi) : 0
-    }
-
-    private static func bodyFade(_ p: Double) -> Double {
-        p < 0.12 ? 1 : max(0, 1 - (p - 0.12) / 0.16)
     }
 
     private static func motesFade(_ p: Double) -> Double {
