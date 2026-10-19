@@ -37,7 +37,7 @@ Your daily learning at a glance. See the reviews and new words waiting for you, 
 - Ready for another round? **I want more** adds to today's allowance without changing your usual limits.
 
 <p align="center">
-  <img src="docs/screenshots/home.png" width="92%" alt="Words Home with daily reviews, a streak tracker, and an activity calendar" />
+  <img src="https://github.com/user-attachments/assets/899c8bc3-d20a-424f-9d49-8d5aefe2fcb7" width="92%" alt="Words Home with daily reviews, a streak tracker, and an activity calendar" />
 </p>
 
 ### Add Words
@@ -52,13 +52,13 @@ Four ways in: one word at a time, a whole list pasted, an Anki `.apkg` deck, or 
 **Examples, written for you.** A word is easier to keep when it comes with a sentence, and writing one for every word is the part people give up on. A button beside the example has the companion write the sentence and its translation, on this Mac, in the pair of languages you are studying — in the single-word editor, in every row of a pasted list, and in the Library, which goes over the words that have none in a run, oldest first. Nothing is saved until you have read it: what it writes arrives in the field, where it can be corrected or thrown away before the word goes in.
 
 <p align="center">
-  <img src="docs/screenshots/one-word.png" width="92%" alt="Adding a single word, with the article typed in front of it and the gender filed automatically" />
+  <img src="https://github.com/user-attachments/assets/65bf471d-d9ee-450a-8d5e-60bcb808a048" width="92%" alt="Adding a single word, with the article typed in front of it and the gender filed automatically" />
 </p>
 
 The Anki importer reads the messes real shared decks arrive in: it guesses which field is the word, which the meaning, which the article, and lines recordings and pictures up with the notes they belong to.
 
 <p align="center">
-  <img src="docs/screenshots/anki-import.png" width="92%" alt="Importing an Anki deck, mapping its fields onto a Words card with a preview beside it" />
+  <img src="https://github.com/user-attachments/assets/66738fab-5763-463a-ba37-74e29ac94057" width="92%" alt="Importing an Anki deck, mapping its fields onto a Words card with a preview beside it" />
 </p>
 
 ### Library
@@ -66,7 +66,7 @@ The Anki importer reads the messes real shared decks arrive in: it guesses which
 A home for every word you collect. Organize your vocabulary into decks and subdecks, give them their own icons, and search your library as it grows. See each word's meaning, deck, audio, visual association, learning stage, and next review date in one table. A word with no example can be given one by the companion — the Library writes them in a run, oldest first, and nothing is saved until you have read it.
 
 <p align="center">
-  <img src="docs/screenshots/library.png" width="92%" alt="Words Library showing vocabulary, decks, learning stages, and review dates" />
+  <img src="https://github.com/user-attachments/assets/bb4b8889-bf98-4944-b1c8-23f6477b2235" width="92%" alt="Words Library showing vocabulary, decks, learning stages, and review dates" />
 </p>
 
 ### Statistics
@@ -76,7 +76,7 @@ See how your vocabulary is developing: words you have not started, words you are
 It also checks the schedule itself: the share of words you meant to remember against the share that actually came back, grouped by how long each had waited. If the two disagree, one setting puts it right.
 
 <p align="center">
-  <img src="docs/screenshots/statistics.png" width="92%" alt="Statistics with vocabulary progress, review history, and upcoming reviews" />
+  <img src="https://github.com/user-attachments/assets/6c0480b4-f05f-4a30-88b9-78cc1c605cd8" width="92%" alt="Statistics with vocabulary progress, review history, and upcoming reviews" />
 </p>
 
 ### Review & Practice
@@ -86,7 +86,7 @@ Learn in either direction — word → meaning, meaning → word, or a mix of bo
 For extra repetition, switch to practice without changing your review schedule, using today's cards or an endless session. Keyboard shortcuts keep reviews moving: Space reveals the meaning, 1–4 rates your answer, and P plays the word.
 
 <p align="center">
-  <img src="docs/screenshots/review.png" width="92%" alt="Review card with a meaning, example sentence, audio, and four recall ratings" />
+  <img src="https://github.com/user-attachments/assets/010cc48f-1c18-4285-8bf9-b754163459ae" width="92%" alt="Review card with a meaning, example sentence, audio, and four recall ratings" />
 </p>
 
 ### Games
@@ -97,7 +97,7 @@ Both games are played with the language's own words, and neither touches your sc
 - **WordFall** — a RealityKit vocabulary game built around your own decks. Choose a deck and study direction, find the right meaning as you play, and follow your points, levels, and accuracy.
 
 <p align="center">
-  <img src="docs/screenshots/dictation.png" width="92%" alt="Dictation: a phrase read aloud, typed back into a box per word, and marked word by word" />
+  <img src="https://github.com/user-attachments/assets/e92e842a-4c42-4fb0-8381-6f71945d0499" width="92%" alt="Dictation: a phrase read aloud, typed back into a box per word, and marked word by word" />
 </p>
 
 <p align="center">
@@ -138,7 +138,7 @@ Export is its own section. Tick whole languages, a deck, or one subdeck; leave b
 Importing only ever adds: a word already in the language is left as it is, and nothing you have studied is overwritten — so a deck can be handed to somebody, taken back with their additions in it, and opened without losing a day of your own schedule. It is also how a library moves to another Mac, or is kept somewhere safe: the file is readable, and nothing in it needs this app to be understood.
 
 <p align="center">
-  <img src="docs/screenshots/export.png" width="92%" alt="Export: languages, decks and subdecks ticked, with the media and schedule to include beside them" />
+  <img src="https://github.com/user-attachments/assets/018d4916-a495-4cf8-82dc-c6c89b9cef9d" width="92%" alt="Export: languages, decks and subdecks ticked, with the media and schedule to include beside them" />
 </p>
 
 ---
