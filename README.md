@@ -46,9 +46,10 @@ Four ways in: one word at a time, a whole list pasted, an Anki `.apkg` deck, or 
 
 - The one-word side is an empty card rather than a form: every field stands where the finished card puts it, and Tab moves from one to the next.
 - Type an article with a word, such as **die Mutter**, and Words files the gender.
-- Ask the companion to write the example sentence and its translation, then read it over before the word goes in — in the single-word editor and in every row of a pasted list.
 - Attach a photo or draw an association with PencilKit to make a word more memorable.
 - Paste lists with flexible formatting — blank lines, Markdown bullets, tabs, a dash where a semicolon should be — or copy the included prompt to have an AI prepare one for you.
+
+**Examples, written for you.** A word is easier to keep when it comes with a sentence, and writing one for every word is the part people give up on. A button beside the example has the companion write the sentence and its translation, on this Mac, in the pair of languages you are studying — in the single-word editor, in every row of a pasted list, and in the Library, which goes over the words that have none in a run, oldest first. Nothing is saved until you have read it: what it writes arrives in the field, where it can be corrected or thrown away before the word goes in.
 
 <p align="center">
   <img src="docs/screenshots/one-word.png" width="92%" alt="Adding a single word, with the article typed in front of it and the gender filed automatically" />
@@ -96,6 +97,10 @@ Both games are played with the language's own words, and neither touches your sc
 - **WordFall** — a RealityKit vocabulary game built around your own decks. Choose a deck and study direction, find the right meaning as you play, and follow your points, levels, and accuracy.
 
 <p align="center">
+  <img src="docs/screenshots/dictation.png" width="92%" alt="Dictation: a phrase read aloud, typed back into a box per word, and marked word by word" />
+</p>
+
+<p align="center">
   <img src="docs/screenshots/wordfall.png" width="92%" alt="WordFall vocabulary game with deck selection, levels, points, and accuracy" />
 </p>
 
@@ -130,7 +135,11 @@ Use your own recordings, or write a transcription the way you write sounds down,
 
 Export is its own section. Tick whole languages, a deck, or one subdeck; leave behind the photographs, the recordings, the drawings or your own schedule; and write it all into one `.wordspack` — a plain zip with readable JSON and a media folder, which another copy of Words opens with the decks exactly as they were.
 
-Importing only ever adds: a word already in the language is left as it is, and nothing you have studied is overwritten.
+Importing only ever adds: a word already in the language is left as it is, and nothing you have studied is overwritten — so a deck can be handed to somebody, taken back with their additions in it, and opened without losing a day of your own schedule. It is also how a library moves to another Mac, or is kept somewhere safe: the file is readable, and nothing in it needs this app to be understood.
+
+<p align="center">
+  <img src="docs/screenshots/export.png" width="92%" alt="Export: languages, decks and subdecks ticked, with the media and schedule to include beside them" />
+</p>
 
 ---
 
