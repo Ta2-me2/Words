@@ -15,3 +15,11 @@ dist/
 
 # macOS
 .DS_Store
+
+# Promo video. The Remotion sources are kept; the heavy parts are not:
+# node_modules, the raw screen recording and anything rendered from it.
+promo/node_modules/
+promo/out/
+promo/public/footage/
+.agents/
+.claude/skills
