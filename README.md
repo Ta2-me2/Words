@@ -10,6 +10,8 @@
   No account. No server. Your vocabulary stays on your Mac.
 
   [Download](https://github.com/Ta2-me2/Words/releases/latest) · [Install](#install) · [Build from source](#building) · [Report an issue](https://github.com/Ta2-me2/Words/issues)
+
+  [![Checks](https://github.com/Ta2-me2/Words/actions/workflows/checks.yml/badge.svg)](https://github.com/Ta2-me2/Words/actions/workflows/checks.yml)
 </div>
 
 ---

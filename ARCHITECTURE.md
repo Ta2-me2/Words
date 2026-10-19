@@ -5,8 +5,8 @@ no account. The only thing it ever asks the network for is a companion model the
 learner chose to install, downloaded once; the words, the schedule and every
 question put to that model stay on the Mac.
 
-Requires macOS 26. Built with Xcode 26 and 27, SwiftUI, Swift 6 with complete strict
-concurrency and `MainActor` default isolation.
+Requires macOS 26. Built with Xcode 27 (Swift 6.4), SwiftUI, Swift 6 with complete
+strict concurrency and `MainActor` default isolation.
 
 ## The loop
 
@@ -279,7 +279,7 @@ Words/
   Persistence/    The library on disk, and the store the interface talks to
   Anki/           Reading Anki packages, and guessing where their fields go
   Exchange/       Zip, and the package Words writes for another copy of itself
-  Features/       Home, Words (add + edit), Library (+ decks), Statistics, Study, Games (+ Dictation), Export
+  Features/       Intro, Home, Words (add + edit), Library (+ decks), Statistics, Study, Games (+ Dictation), Export
 Tests/            Checks for everything above that has no window in it
 Packages/
   WordFallSDK/    The game, as its developer ships it: a local Swift package
@@ -893,7 +893,7 @@ Tests/run.sh
 ```
 
 Compiles the model, the scheduler, the queue, the insights, the import, the
-session, the Anki reader and the store on their own and runs over eight hundred checks: the scheduling rules, the day's
+session, the Anki reader and the store on their own and runs 1480 checks: the scheduling rules, the day's
 allowance, the order of a sitting, decks and what a deleted one does to its
 words, a deck's own allowance, subdecks — what a deck contains, whose limit a
 subdeck works to, where words go when either is taken away, the two levels
@@ -947,9 +947,11 @@ learning from.
 
 ## Not here yet
 
-Onboarding, translation, export, sync, streaks and achievements. Drawings are
-stored so that an export would be a copy rather than a conversion, but there is
-no export command yet.
+Translation, sync and achievements. Onboarding, the streak and export were on
+this list and are not any more: the introduction creates the first language,
+the streak is on the Home screen with its freezes, and Export writes a
+`.wordspack` that another copy of Words opens — drawings included, copied
+rather than converted, which is why they were stored the way they are.
 
 From Anki: the newest package format (it needs a zstd decoder), a learner's own
 progress (Anki's review log could be replayed through FSRS the way the SM-2
@@ -965,6 +967,9 @@ that says whether it is needed — if what was promised and what came back agree
 there is nothing to optimise — and the history it would be fitted to, which has
 been kept since the first day.
 
-Gender rules exist for German only, deliberately: the list of languages is going
-to change, and rules written for languages nobody is learning are rules nobody
-has checked.
+Gender rules exist for nineteen of the thirty-one languages. The other twelve
+mark no gender at all, which is the honest answer for Turkish or Japanese
+rather than a gap, and a language somebody adds marks none until it is told
+otherwise. Every rule that is written has checks behind it — what the mark
+looks like, whether it is spoken, and what the voice is handed — because a rule
+nobody has checked is worse than no rule.

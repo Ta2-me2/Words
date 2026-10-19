@@ -1,0 +1,37 @@
+# The checks that need no window, run on every push.
+#
+# Not the app build: that resolves MLX, which compiles Metal kernels, and a
+# hosted runner would spend most of its time downloading a toolchain to tell us
+# what Xcode already says locally. What is worth running here is Tests/run.sh —
+# the model, the scheduler, the queue, the store, the import and the export,
+# compiled on their own as a command-line binary in a couple of seconds.
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  checks:
+    name: Model, scheduler, store
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use the newest Xcode on the runner
+        run: |
+          newest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "Selecting $newest"
+          sudo xcode-select -s "$newest"
+
+      - name: Versions
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Run the checks
+        run: Tests/run.sh
